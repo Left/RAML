@@ -1,0 +1,32 @@
+#%RAML 1.0
+title: Test Database
+version: v0
+baseUri: http://mydatabase.com/
+displayName: My database
+protocols: [HTTPS]
+
+uses:
+  orm: !include lib/orm.raml
+
+types:
+  User:
+    type: object
+    properties:
+      id:
+        type: number
+        (orm.id):
+      firstName:
+        type: string
+        (orm.indexed): true
+      lastName: string
+  (orm.id):
+
+/user/create:
+  post:
+    description: |
+      Creates new user
+    responses:
+      200:
+        body:
+          application/json:
+            type: User
