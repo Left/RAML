@@ -36,7 +36,7 @@ interface OutFolder {
     createOutStream(name: string): TextStream;
 }
 
-type Block = ()=>(Block|string)[];
+type Block = ()=>(Block|string)[] ;
 
 const printBlock = function(b: Block, lvl?: number): string[] {
     lvl = lvl || 0;
@@ -57,7 +57,7 @@ const uppercaseFirst = function(str: string) : string {
 };
 
 const mapTypes = function(api:Api, out: OutFolder) {
-    const toJavaType = function(type: string) {
+    const toJavaTypeImpl = function(type: string, onObject: (typeName: string) => void) {
         if (type === "string") {
             return "String";
         } else if (type === "number") {
@@ -65,58 +65,69 @@ const mapTypes = function(api:Api, out: OutFolder) {
         } else if (type === "boolean") {
             return "boolean";
         } else {
+            onObject(type);
             return type;
         }
     }
 
     api.types().forEach((type) => {
         const block:Block = () => {
+            var imports: { [typeName: string]:any } = {};
+
+            const toJavaType = function(type: string) {
+                return toJavaTypeImpl(type, (type) => {
+                    imports[type] = "";
+                });
+            };
+
+            const props = type.properties();
+
+            var wholeClassContent = [];
+
+            wholeClassContent.push("// Properties:");
+
+            props.forEach((prop) =>
+                wholeClassContent.push("private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"));
+
+            // Getters
+            wholeClassContent.push("");
+            wholeClassContent.push("// Getters:");
+
+            props.forEach((prop) => {
+                wholeClassContent = wholeClassContent.concat([
+                    "public " + toJavaType(prop.type()[0]) + " get" + uppercaseFirst(prop.name()) + "() { ",
+                    () => ["return " + prop.name() + ";"],
+                    "};"]);
+            });
+
+            // Setters
+            wholeClassContent.push("");
+            wholeClassContent.push("// Setters:");
+
+            props.forEach((prop) => {
+                wholeClassContent.push("public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ");
+                wholeClassContent.push(() => ["this." + prop.name() + "=" + prop.name() + ";"]);
+                wholeClassContent.push("};");
+            });
+
+            const classDeclaration = [
+                "/**",
+                " * " + (type.displayName() || ""),
+                " */",
+                "class " + type.name() + "{",
+                () => wholeClassContent,
+                "}"
+            ];
+
             return [
                 "// This file is generated.",
                 "// please don't edit it manually.",
                 "",
-                "/**",
-                " * " + type.displayName(),
-                " */",
-                "class " + type.name() + "{",
-
-                () => {
-                    const props = type.properties();
-
-                    var properties = props.map((prop) =>
-                        "private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";");
-
-                    var methods = [];
-
-                    // Getters
-                    methods.push("");
-                    methods.push("// Getters:");
-
-                    props.forEach((prop) => {
-                        methods = methods.concat([
-                            "public " + toJavaType(prop.type()[0]) + " get" + uppercaseFirst(prop.name()) + "() { ",
-                            () => ["return " + prop.name() + ";"],
-                            "};"]);
-                    });
-
-                    // Setters
-                    methods.push("");
-                    methods.push("// Setters:");
-
-                    props.forEach((prop) => {
-                        methods.push("public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ");
-                        methods.push(() => ["this." + prop.name() + "=" + prop.name() + ";"]);
-                        methods.push("};");
-                    });
-
-                    return [ "// Properties:"].concat(
-                            properties
-                        ).concat(
-                            methods
-                        );
-                },
-                "}"
-            ];
+                () => [""]
+            ]
+            .concat(Object.keys(imports).map((type) => "import " + type + ";"))
+            .concat([""])
+            .concat(classDeclaration);
         };
 
         const stream = out.createOutStream(type.name() + ".java");

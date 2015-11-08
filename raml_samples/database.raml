@@ -9,6 +9,12 @@ uses:
   orm: !include lib/orm.raml
 
 types:
+  Phone:
+    type: object
+    properties:
+      code: string
+      number: string
+
   Address:
     type: object
     displayName: An address (quite simple implementation)
@@ -32,6 +38,8 @@ types:
         type: string
         (orm.indexed): true
       lastName: string
+      homePhone: Phone
+      cellPhone: Phone
       addressId:
         type: number
         (orm.ref): Address
