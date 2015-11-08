@@ -9,8 +9,21 @@ uses:
   orm: !include lib/orm.raml
 
 types:
+  Address:
+    type: object
+    displayName: An address (quite simple implementation)
+    properties:
+      id:
+        type: number
+        (orm.id):
+      country: string
+      city: string
+      street: string
+      house: string
+
   User:
     type: object
+    displayName: System's user
     properties:
       id:
         type: number
@@ -19,7 +32,26 @@ types:
         type: string
         (orm.indexed): true
       lastName: string
-  (orm.id):
+      addressId:
+        type: number
+        (orm.ref): Address
+        required: false
+
+  Pet:
+    type: object
+    displayName: Pet that can live at some address and have an owner
+    properties:
+      id:
+        type: number
+        (orm.id):
+      owner:
+        type: number
+        (orm.ref): User
+      name:
+        type: string
+      addressId:
+        type: number
+        (orm.ref): Address
 
 /user/create:
   post:

@@ -5,7 +5,7 @@
 import Error = require("./jsyaml/js-yaml/exception");
 import yaml = require("./jsyaml/yamlAST");
 import highlevel = require("./highLevelAST");
-import hi = require("./highLevelImpl");
+import hi = require("./highLevelImpl.d");
 import jsyaml = require("./jsyaml/jsyaml2lowLevel");
 export interface ICompilationUnit {
     contents(): string;

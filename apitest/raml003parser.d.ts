@@ -2583,7 +2583,7 @@ export interface OLibrary extends RAMLLanguageElement {
     /**
      *
      **/
-    types(): DataElement[];
+    types(): ObjectField[];
     /**
      *
      **/
