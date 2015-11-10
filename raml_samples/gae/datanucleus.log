@@ -11,3 +11,6 @@ org.datanucleus.enhancer.NucleusEnhanceException: No "persistence.xml" files wer
 13:04:53,996 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
 13:04:54,052 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=34 ms, enhance=0 ms, total=34 ms. Consult the log for full details
 13:04:54,055 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+13:12:36,380 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+13:12:36,426 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=36 ms, enhance=0 ms, total=36 ms. Consult the log for full details
+13:12:36,426 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details

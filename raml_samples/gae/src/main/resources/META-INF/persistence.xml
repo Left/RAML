@@ -7,11 +7,13 @@
     version="1.0">
 
   <persistence-unit name="Demo">
+    <!--
     <class>com.example.dbotest.Phone</class>
     <class>com.example.dbotest.Pet</class>
     <class>com.example.dbotest.Address</class>
     <class>com.example.dbotest.User</class>
     <exclude-unlisted-classes/>
+    -->
 
     <properties>
       <property name="javax.jdo.option.ConnectionUserName" value="root" />

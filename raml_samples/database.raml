@@ -63,6 +63,9 @@ types:
 
 /user/create:
   post:
+    body:
+      application/json:
+        type: User
     description: |
       Creates new user
     responses:
@@ -70,3 +73,5 @@ types:
         body:
           application/json:
             type: User
+      500:
+        body:

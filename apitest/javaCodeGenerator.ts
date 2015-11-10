@@ -154,13 +154,13 @@ const mapTypes = function(api: Api, packageName: string, out: OutFolder) {
 
 // const tempFolder = path.join(os.tmpdir(), "jdo_output");
 
-const folder = path.join(__dirname, "/../raml_samples/gae/src/main/java/");
+const javaFilesFolder = path.join(__dirname, "/../raml_samples/gae/src/main/java/");
 
-console.log("Saving files to ", folder);
+console.log("Saving .java files to ", javaFilesFolder);
 
-mapTypes(api, "com.example.dbotest", {
+mapTypes(api, "com.example.dbotest.db", {
     createOutStream(name: string[]) {
-        const file = path.join(folder, path.join.apply(null, name));
+        const file = path.join(javaFilesFolder, path.join.apply(null, name));
 
         const checkExistance = function(dir: string) {
             if (!fs.existsSync(dir)) {
