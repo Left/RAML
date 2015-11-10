@@ -4,12 +4,27 @@ usage: |
 
 annotationTypes:
   id:
+    description: This field is an ID of the class
   indexed:
+    description: Not sure we need this annotation
     parameters:
       value:
         type: boolean
         required: false
-  ref:
+  transient:
+    description: Transient property, never saved
+    parameters:
+      value:
+        type: boolean
+        required: false
+  column:
+    description: Manually specifies the column
+    parameters:
+      value:
+        type: string
+        required: false
+  join:
+    description: reference to other class/table
     parameters:
       value:
         type: string

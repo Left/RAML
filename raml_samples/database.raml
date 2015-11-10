@@ -42,7 +42,7 @@ types:
       cellPhone: Phone
       addressId:
         type: number
-        (orm.ref): Address
+        (orm.join): Address
         required: false
 
   Pet:
@@ -54,12 +54,12 @@ types:
         (orm.id):
       owner:
         type: number
-        (orm.ref): User
+        (orm.join): User
       name:
         type: string
       addressId:
         type: number
-        (orm.ref): Address
+        (orm.join): Address
 
 /user/create:
   post:

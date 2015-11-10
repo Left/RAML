@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<persistence
+    xmlns="http://java.sun.com/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
+    version="1.0">
+
+  <persistence-unit name="Demo">
+    <class>com.example.dbotest.Phone</class>
+    <class>com.example.dbotest.Pet</class>
+    <class>com.example.dbotest.Address</class>
+    <class>com.example.dbotest.User</class>
+    <exclude-unlisted-classes/>
+
+    <properties>
+      <property name="javax.jdo.option.ConnectionUserName" value="root" />
+      <property name="datanucleus.autoCreateSchema" value="true"/>
+
+    </properties>
+
+  </persistence-unit>
+
+</persistence>

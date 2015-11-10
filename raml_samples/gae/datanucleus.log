@@ -1,0 +1,13 @@
+12:35:28,647 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+12:35:28,655 (main) ERROR [DataNucleus.Enhancer] - DataNucleus Enhancer completed with an error. Please review the enhancer log (at DEBUG level) for full details. Some classes may have been enhanced but some caused errors
+No "persistence.xml" files were found in the CLASSPATH yet you specified as input the name ("Demo") of a "persistence-unit" to enhance. You must have a valid "persistence.xml" file in the CLASSPATH in a valid location to use this option.
+org.datanucleus.enhancer.NucleusEnhanceException: No "persistence.xml" files were found in the CLASSPATH yet you specified as input the name ("Demo") of a "persistence-unit" to enhance. You must have a valid "persistence.xml" file in the CLASSPATH in a valid location to use this option.
+	at org.datanucleus.enhancer.DataNucleusEnhancer.getFileMetadataForInput(DataNucleusEnhancer.java:775)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.enhance(DataNucleusEnhancer.java:500)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.main(DataNucleusEnhancer.java:1152)
+12:38:47,412 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+12:38:47,902 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=469 ms, enhance=0 ms, total=469 ms. Consult the log for full details
+12:38:47,903 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+13:04:53,996 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+13:04:54,052 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=34 ms, enhance=0 ms, total=34 ms. Consult the log for full details
+13:04:54,055 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details

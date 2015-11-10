@@ -33,7 +33,7 @@ interface TextStream {
 }
 
 interface OutFolder {
-    createOutStream(name: string): TextStream;
+    createOutStream(name: string[]): TextStream;
 }
 
 type Block = ()=>(Block|string)[] ;
@@ -56,7 +56,7 @@ const uppercaseFirst = function(str: string) : string {
     return str.substr(0, 1).toUpperCase() + str.substr(1);
 };
 
-const mapTypes = function(api:Api, out: OutFolder) {
+const mapTypes = function(api: Api, packageName: string, out: OutFolder) {
     const toJavaTypeImpl = function(type: string, onObject: (typeName: string) => void) {
         if (type === "string") {
             return "String";
@@ -71,12 +71,18 @@ const mapTypes = function(api:Api, out: OutFolder) {
     }
 
     api.types().forEach((type) => {
+        const packageAsArray = packageName.split(".");
+
         const block:Block = () => {
-            var imports: { [typeName: string]:any } = {};
+            var imports: { [typeName: string]:any } = {
+                "javax.persistence.Entity" : "",
+                "javax.persistence.Id" : "",
+                "javax.persistence.Basic" : ""
+            };
 
             const toJavaType = function(type: string) {
                 return toJavaTypeImpl(type, (type) => {
-                    imports[type] = "";
+                    imports[packageAsArray.concat([type]).join(".")] = "";
                 });
             };
 
@@ -86,8 +92,11 @@ const mapTypes = function(api:Api, out: OutFolder) {
 
             wholeClassContent.push("// Properties:");
 
-            props.forEach((prop) =>
-                wholeClassContent.push("private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"));
+            props.forEach((prop) => {
+                wholeClassContent = wholeClassContent.concat([
+                    "private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"
+                ]);
+            });
 
             // Getters
             wholeClassContent.push("");
@@ -105,15 +114,18 @@ const mapTypes = function(api:Api, out: OutFolder) {
             wholeClassContent.push("// Setters:");
 
             props.forEach((prop) => {
-                wholeClassContent.push("public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ");
-                wholeClassContent.push(() => ["this." + prop.name() + "=" + prop.name() + ";"]);
-                wholeClassContent.push("};");
+                wholeClassContent = wholeClassContent.concat([
+                    "public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ",
+                    () => ["this." + prop.name() + "=" + prop.name() + ";"],
+                    "};"
+                ]);
             });
 
             const classDeclaration = [
                 "/**",
                 " * " + (type.displayName() || ""),
                 " */",
+                "@Entity",
                 "class " + type.name() + "{",
                 () => wholeClassContent,
                 "}"
@@ -123,28 +135,42 @@ const mapTypes = function(api:Api, out: OutFolder) {
                 "// This file is generated.",
                 "// please don't edit it manually.",
                 "",
+                "package " + packageAsArray.join(".") + ";",
                 () => [""]
             ]
+            .concat([
+                ""
+            ])
             .concat(Object.keys(imports).map((type) => "import " + type + ";"))
             .concat([""])
             .concat(classDeclaration);
         };
 
-        const stream = out.createOutStream(type.name() + ".java");
+        const stream = out.createOutStream(packageAsArray.concat([type.name() + ".java"]));
         stream.write(printBlock(block).join("\n"));
         stream.close();
     });
 };
 
-const tempFolder = path.join(os.tmpdir(), "jdo_output");
-console.log("Saving files to ", tempFolder);
+// const tempFolder = path.join(os.tmpdir(), "jdo_output");
 
-mapTypes(api, {
-    createOutStream(name) {
-        if (!fs.existsSync(tempFolder)) {
-            fs.mkdirSync(tempFolder);
-        }
-        const strm = fs.createWriteStream(path.join(tempFolder, name), { encoding: "utf8" });
+const folder = path.join(__dirname, "/../raml_samples/gae/src/main/java/");
+
+console.log("Saving files to ", folder);
+
+mapTypes(api, "com.example.dbotest", {
+    createOutStream(name: string[]) {
+        const file = path.join(folder, path.join.apply(null, name));
+
+        const checkExistance = function(dir: string) {
+            if (!fs.existsSync(dir)) {
+                checkExistance(path.dirname(dir));
+                fs.mkdirSync(dir);
+            }
+        };
+        checkExistance(path.dirname(file));
+
+        const strm = fs.createWriteStream(file, { encoding: "utf8" });
         return {
             write(str: string) {
                 strm.write(str);
