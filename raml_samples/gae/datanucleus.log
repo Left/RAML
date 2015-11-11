@@ -14,3 +14,75 @@ org.datanucleus.enhancer.NucleusEnhanceException: No "persistence.xml" files wer
 13:12:36,380 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
 13:12:36,426 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=36 ms, enhance=0 ms, total=36 ms. Consult the log for full details
 13:12:36,426 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+14:32:47,811 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+14:32:47,881 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=63 ms, enhance=0 ms, total=63 ms. Consult the log for full details
+14:32:47,881 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+14:39:37,292 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+14:39:37,378 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=78 ms, enhance=0 ms, total=78 ms. Consult the log for full details
+14:39:37,379 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+15:27:57,421 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+15:27:57,486 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=58 ms, enhance=0 ms, total=58 ms. Consult the log for full details
+15:27:57,486 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+15:38:52,104 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+15:38:52,148 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=41 ms, enhance=0 ms, total=41 ms. Consult the log for full details
+15:38:52,150 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+15:45:49,966 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+15:45:50,003 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=34 ms, enhance=0 ms, total=34 ms. Consult the log for full details
+15:45:50,003 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:13:26,513 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:13:26,570 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=53 ms, enhance=0 ms, total=53 ms. Consult the log for full details
+16:13:26,570 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:14:29,841 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:14:29,886 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=40 ms, enhance=0 ms, total=40 ms. Consult the log for full details
+16:14:29,887 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:20:27,762 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:20:27,817 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=49 ms, enhance=0 ms, total=49 ms. Consult the log for full details
+16:20:27,817 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:24:14,448 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:24:14,496 (main) ERROR [DataNucleus.Enhancer] - DataNucleus Enhancer completed with an error. Please review the enhancer log (at DEBUG level) for full details. Some classes may have been enhanced but some caused errors
+No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+org.datanucleus.enhancer.NucleusEnhanceException: No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+	at org.datanucleus.enhancer.DataNucleusEnhancer.getFileMetadataForInput(DataNucleusEnhancer.java:780)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.enhance(DataNucleusEnhancer.java:500)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.main(DataNucleusEnhancer.java:1152)
+16:25:12,935 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:25:12,960 (main) ERROR [DataNucleus.Enhancer] - DataNucleus Enhancer completed with an error. Please review the enhancer log (at DEBUG level) for full details. Some classes may have been enhanced but some caused errors
+No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+org.datanucleus.enhancer.NucleusEnhanceException: No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+	at org.datanucleus.enhancer.DataNucleusEnhancer.getFileMetadataForInput(DataNucleusEnhancer.java:780)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.enhance(DataNucleusEnhancer.java:500)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.main(DataNucleusEnhancer.java:1152)
+16:26:42,189 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:26:42,216 (main) ERROR [DataNucleus.Enhancer] - DataNucleus Enhancer completed with an error. Please review the enhancer log (at DEBUG level) for full details. Some classes may have been enhanced but some caused errors
+No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+org.datanucleus.enhancer.NucleusEnhanceException: No "persistence-unit" of name "Demo" was found in the CLASSPATH. Please check the "persistence.xml" files available
+	at org.datanucleus.enhancer.DataNucleusEnhancer.getFileMetadataForInput(DataNucleusEnhancer.java:780)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.enhance(DataNucleusEnhancer.java:500)
+	at org.datanucleus.enhancer.DataNucleusEnhancer.main(DataNucleusEnhancer.java:1152)
+16:28:20,850 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:28:20,930 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=71 ms, enhance=0 ms, total=71 ms. Consult the log for full details
+16:28:20,931 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:28:31,160 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:28:31,205 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=39 ms, enhance=0 ms, total=39 ms. Consult the log for full details
+16:28:31,206 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:29:22,128 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:29:22,165 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=31 ms, enhance=0 ms, total=31 ms. Consult the log for full details
+16:29:22,165 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:36:00,731 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:36:00,776 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=38 ms, enhance=0 ms, total=38 ms. Consult the log for full details
+16:36:00,777 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:40:40,376 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:40:40,466 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=75 ms, enhance=0 ms, total=75 ms. Consult the log for full details
+16:40:40,466 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+16:56:58,657 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+16:56:58,719 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=58 ms, enhance=0 ms, total=58 ms. Consult the log for full details
+16:56:58,719 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+17:02:14,313 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+17:02:14,372 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=46 ms, enhance=0 ms, total=46 ms. Consult the log for full details
+17:02:14,372 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+17:25:52,662 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+17:25:52,768 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=101 ms, enhance=0 ms, total=101 ms. Consult the log for full details
+17:25:52,769 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details
+19:32:50,885 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer (version 4.1.6) for API "JDO"
+19:32:51,037 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed with success for 0 classes. Timings : input=122 ms, enhance=0 ms, total=122 ms. Consult the log for full details
+19:32:51,037 (main) INFO  [DataNucleus.Enhancer] - DataNucleus Enhancer completed and no classes were enhanced. Consult the log for full details

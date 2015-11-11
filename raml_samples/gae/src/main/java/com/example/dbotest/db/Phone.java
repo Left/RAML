@@ -12,7 +12,7 @@ import javax.persistence.Basic;
  * 
  */
 @Entity
-class Phone{
+public class Phone{
 	// Properties:
 	private String code;
 	private String number;

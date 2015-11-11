@@ -9,6 +9,7 @@ import {DataElement} from "./raml003parser";
 import {AnnotationRef} from "./raml003parser";
 import {StructuredValue} from "./highLevelImpl";
 import {Stream} from "stream";
+import {Resource} from "./raml003parser";
 
 // This assigns global.RAML
 require('e:/git/raml-js-parser-2/src/bundle.js');
@@ -126,7 +127,7 @@ const mapTypes = function(api: Api, packageName: string, out: OutFolder) {
                 " * " + (type.displayName() || ""),
                 " */",
                 "@Entity",
-                "class " + type.name() + "{",
+                "public class " + type.name() + "{",
                 () => wholeClassContent,
                 "}"
             ];
@@ -150,6 +151,46 @@ const mapTypes = function(api: Api, packageName: string, out: OutFolder) {
         stream.write(printBlock(block).join("\n"));
         stream.close();
     });
+
+    const joinResouces = (r: Resource[], parentUrl: string[], processor: (fullUrl: string[], r:Resource) => void) => {
+        r.forEach((res) => {
+            const url = res.relativeUri().value().split("/").filter(el => el !== "");
+
+            processor(parentUrl.concat(url), res);
+            joinResouces(res.resources(), parentUrl.concat(url), processor);
+        });
+    };
+
+    joinResouces(api.resources(), [], (fullUrl, r) => {
+        console.log(fullUrl);
+
+        r.methods().forEach((method) => {
+            console.log(method.method());
+
+            const methodLowCase = method.method().toLowerCase();
+            if (methodLowCase === 'post') {
+                // It could be "create" method
+                method.body().forEach((kk) => {
+                    kk.type().forEach(type => {
+                       if (type.toLowerCase() === fullUrl[0]) {
+                           console.log("FOUND CREATE METHOD for type", type);
+                       }
+                    });
+                })
+            } else if (methodLowCase === 'delete') {
+                // Delete the type
+            }
+
+            method.responses().forEach((resp) => {
+                console.log("\t", resp.code().value());
+
+                resp.body().forEach((body) => {
+                    console.log("\t\t", body.type().join(","));
+                })
+            });
+        });
+    });
+
 };
 
 // const tempFolder = path.join(os.tmpdir(), "jdo_output");

@@ -27,7 +27,7 @@ types:
       street: string
       house: string
 
-  User:
+  Person:
     type: object
     displayName: System's user
     properties:
@@ -61,17 +61,35 @@ types:
         type: number
         (orm.join): Address
 
-/user/create:
+/person:
   post:
     body:
       application/json:
-        type: User
+        type: Person
     description: |
       Creates new user
     responses:
       200:
         body:
           application/json:
-            type: User
+            type: Person
+      400:
+        body:
       500:
         body:
+  /{userId}:
+    get:
+      description: |
+        Get the user
+      responses:
+        200:
+          body:
+            application/json:
+              type: Person
+
+    delete:
+      description: |
+        Delete the user
+      responses:
+        200:
+          body:

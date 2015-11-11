@@ -12,7 +12,7 @@ import javax.persistence.Basic;
  * Pet that can live at some address and have an owner
  */
 @Entity
-class Pet{
+public class Pet{
 	// Properties:
 	private Integer id;
 	private Integer owner;

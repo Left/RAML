@@ -12,7 +12,7 @@ import javax.persistence.Basic;
  * An address (quite simple implementation)
  */
 @Entity
-class Address{
+public class Address{
 	// Properties:
 	private Integer id;
 	private String country;
