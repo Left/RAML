@@ -108,7 +108,7 @@ class JavaClassesGenerator {
         const end = lines.map(s => s.trim()).indexOf("<!-- [END Objectify] -->");
 
         if (start > 0 && end > start) {
-            console.log(lines.slice(start + 1, end));
+            // console.log(lines.slice(start + 1, end));
 
             const xmlBlock = (obj:{[name: string]: any}):Block => {
                 var res = [];
@@ -123,7 +123,8 @@ class JavaClassesGenerator {
                 }
                 return () => res;
             };
-            console.log(printBlock("    ",
+
+            const replacementLines = printBlock("    ",
                 xmlBlock({
                     "filter": {
                         "filter-name": "ObjectifyFilter",
@@ -136,7 +137,11 @@ class JavaClassesGenerator {
                     "listener": {
                         "listener-class": this.packageAsArray.concat(["OfyHelper"]).join(".")
                     }
-                }), 1));
+                }), 1);
+
+            return lines.slice(0, start+1)
+                .concat(replacementLines)
+                .concat(lines.slice(end)).join("\n");
         }
 
         return oldContent;
