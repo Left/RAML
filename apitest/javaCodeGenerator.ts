@@ -17,7 +17,6 @@ require('e:/git/raml-js-parser-2/src/bundle.js');
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
-
 var fName = path.resolve(__dirname + "/../raml_samples/database.raml");
 
 const ramlInterface = (<any>global).RAML;
@@ -37,169 +36,332 @@ interface OutFolder {
     createOutStream(name: string[]): TextStream;
 }
 
-type Block = ()=>(Block|string)[] ;
+// type Block = () => (((Block|string)[]) | string[] | Block[]);
+interface Block {
+    (): (Block|string)[];
+}
 
-const printBlock = function(b: Block, lvl?: number): string[] {
+const printBlock = function(tab: string, b: Block, lvl?: number): string[] {
     lvl = lvl || 0;
     var ret: string[] = [];
     b().forEach((l: Block|string) => {
        if (typeof l === "string") {
-           ret.push(Array(lvl+1).join("\t") + <string>l);
+           ret.push(Array(lvl+1).join(tab) + <string>l);
        } else {
-           ret = ret.concat(printBlock(<Block>l, lvl+1));
+           ret = ret.concat(printBlock(tab, <Block>l, lvl+1));
        }
     });
 
     return ret;
 };
 
-const uppercaseFirst = function(str: string) : string {
+const uppercaseFirst = (str: string) : string => {
     return str.substr(0, 1).toUpperCase() + str.substr(1);
 };
 
-const mapTypes = function(api: Api, packageName: string, out: OutFolder) {
-    const toJavaTypeImpl = function(type: string, onObject: (typeName: string) => void) {
-        if (type === "string") {
-            return "String";
-        } else if (type === "number") {
-            return "Integer"; // TODO: map other types here
-        } else if (type === "boolean") {
-            return "boolean";
-        } else {
-            onObject(type);
-            return type;
-        }
-    }
+const getAnnotation = (a): { name: string, value: string} => {
+    const s = <StructuredValue>(<any>((<AnnotationRef>a).value()));
+    var iLowLevelASTNode = s.lowLevel();
 
-    api.types().forEach((type) => {
-        const packageAsArray = packageName.split(".");
-
-        const block:Block = () => {
-            var imports: { [typeName: string]:any } = {
-                "javax.persistence.Entity" : "",
-                "javax.persistence.Id" : "",
-                "javax.persistence.Basic" : ""
-            };
-
-            const toJavaType = function(type: string) {
-                return toJavaTypeImpl(type, (type) => {
-                    imports[packageAsArray.concat([type]).join(".")] = "";
-                });
-            };
-
-            const props = type.properties();
-
-            var wholeClassContent = [];
-
-            wholeClassContent.push("// Properties:");
-
-            props.forEach((prop) => {
-                wholeClassContent = wholeClassContent.concat([
-                    "private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"
-                ]);
-            });
-
-            // Getters
-            wholeClassContent.push("");
-            wholeClassContent.push("// Getters:");
-
-            props.forEach((prop) => {
-                wholeClassContent = wholeClassContent.concat([
-                    "public " + toJavaType(prop.type()[0]) + " get" + uppercaseFirst(prop.name()) + "() { ",
-                    () => ["return " + prop.name() + ";"],
-                    "};"]);
-            });
-
-            // Setters
-            wholeClassContent.push("");
-            wholeClassContent.push("// Setters:");
-
-            props.forEach((prop) => {
-                wholeClassContent = wholeClassContent.concat([
-                    "public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ",
-                    () => ["this." + prop.name() + "=" + prop.name() + ";"],
-                    "};"
-                ]);
-            });
-
-            const classDeclaration = [
-                "/**",
-                " * " + (type.displayName() || ""),
-                " */",
-                "@Entity",
-                "public class " + type.name() + "{",
-                () => wholeClassContent,
-                "}"
-            ];
-
-            return [
-                "// This file is generated.",
-                "// please don't edit it manually.",
-                "",
-                "package " + packageAsArray.join(".") + ";",
-                () => [""]
-            ]
-            .concat([
-                ""
-            ])
-            .concat(Object.keys(imports).map((type) => "import " + type + ";"))
-            .concat([""])
-            .concat(classDeclaration);
-        };
-
-        const stream = out.createOutStream(packageAsArray.concat([type.name() + ".java"]));
-        stream.write(printBlock(block).join("\n"));
-        stream.close();
-    });
-
-    const joinResouces = (r: Resource[], parentUrl: string[], processor: (fullUrl: string[], r:Resource) => void) => {
-        r.forEach((res) => {
-            const url = res.relativeUri().value().split("/").filter(el => el !== "");
-
-            processor(parentUrl.concat(url), res);
-            joinResouces(res.resources(), parentUrl.concat(url), processor);
-        });
-    };
-
-    joinResouces(api.resources(), [], (fullUrl, r) => {
-        console.log(fullUrl);
-
-        r.methods().forEach((method) => {
-            console.log(method.method());
-
-            const methodLowCase = method.method().toLowerCase();
-            if (methodLowCase === 'post') {
-                // It could be "create" method
-                method.body().forEach((kk) => {
-                    kk.type().forEach(type => {
-                       if (type.toLowerCase() === fullUrl[0]) {
-                           console.log("FOUND CREATE METHOD for type", type);
-                       }
-                    });
-                })
-            } else if (methodLowCase === 'delete') {
-                // Delete the type
-            }
-
-            method.responses().forEach((resp) => {
-                console.log("\t", resp.code().value());
-
-                resp.body().forEach((body) => {
-                    console.log("\t\t", body.type().join(","));
-                })
-            });
-        });
-    });
-
+    return { name: s.valueName(), value: iLowLevelASTNode.value()};
 };
 
+function toJavaTypeImpl(type:string, onObject:(typeName:string) => void): string {
+    if (type === "string") {
+        return "String";
+    } else if (type === "number") {
+        return "Long"; // TODO: map other types here
+    } else if (type === "boolean") {
+        return "boolean";
+    } else {
+        onObject(type);
+        return type;
+    }
+}
+
+const joinResouces = (r:Resource[], parentUrl:string[], processor:(fullUrl:string[], r:Resource) => void) => {
+    r.forEach((res) => {
+        const url = res.relativeUri().value().split("/").filter(el => el !== "");
+
+        processor(parentUrl.concat(url), res);
+        joinResouces(res.resources(), parentUrl.concat(url), processor);
+    });
+};
+
+/**
+ *
+ **/
+class JavaClassesGenerator {
+    private packageAsArray: string[];
+    private generatedTypes: string[] = [];
+
+    constructor(private api:Api, private packageName:string) {
+        this.packageAsArray = this.packageName.split(".");
+    }
+
+    processWebXml(oldContent:string):string  {
+        // TODO: Use some real XML parser to work with XML file
+
+        const lines = oldContent.split(/\r\n|\r|\n/);
+
+        const start = lines.map(s => s.trim()).indexOf("<!-- [START Objectify] -->");
+        const end = lines.map(s => s.trim()).indexOf("<!-- [END Objectify] -->");
+
+        if (start > 0 && end > start) {
+            console.log(lines.slice(start + 1, end));
+
+            const xmlBlock = (obj:{[name: string]: any}):Block => {
+                var res = [];
+                for (const n in obj) {
+                    if ((typeof obj[n]) === 'string') {
+                        res.push("<" + n + ">" + obj[n] + "</" + n + ">");
+                    } else {
+                        res.push("<" + n + ">");
+                        res = res.concat(xmlBlock(obj[n]));
+                        res.push("</" + n + ">");
+                    }
+                }
+                return () => res;
+            };
+            console.log(printBlock("    ",
+                xmlBlock({
+                    "filter": {
+                        "filter-name": "ObjectifyFilter",
+                        "filter-class": "com.googlecode.objectify.ObjectifyFilter"
+                    },
+                    "filter-mapping": {
+                        "filter-name": "ObjectifyFilter",
+                        "url-pattern": "/*"
+                    },
+                    "listener": {
+                        "listener-class": this.packageAsArray.concat(["OfyHelper"]).join(".")
+                    }
+                }), 1));
+        }
+
+        return oldContent;
+    }
+
+    private generateOfyHelper(stream: TextStream):void {
+        const block:Block = () => {
+            var imports:{ [typeName: string]:any } = {
+                "com.googlecode.objectify.Objectify": "",
+                "com.googlecode.objectify.ObjectifyFactory": "",
+                "com.googlecode.objectify.ObjectifyService": "",
+                "javax.servlet.ServletContextListener": "",
+                "javax.servlet.ServletContextEvent": ""
+            };
+
+            return this.generatePackageHeader()
+              .concat(Object.keys(
+                  imports).concat(
+                      this.generatedTypes).map((type) => "import " + type + ";"))
+              .concat(["", ""])
+              .concat([
+                  "public class OfyHelper implements ServletContextListener {",
+                  () => [
+                      "public static void register() {",
+                      () => this.generatedTypes.map(cl => "ObjectifyService.register(" + cl + ".class);"),
+                      "}"
+                  ],
+                  "",
+                  () => [
+                      "public void contextInitialized(ServletContextEvent event) {",
+                      () => [
+                          "// This will be invoked as part of a warmup request, or the first user",
+                          "// request if no warmup request was invoked.",
+                          "register();"
+                      ],
+                      "}"
+                  ],
+                  "",
+                  () => [
+                      "public void contextDestroyed(ServletContextEvent event) {",
+                      () => [
+                          "// App Engine does not currently invoke this method."
+                      ],
+                      "}"
+                  ],
+                  "}"
+              ]);
+        };
+
+        stream.write(printBlock("\t", block).join("\n"));
+        stream.close();
+    }
+
+    mapTypes(out:OutFolder): void {
+        api.types().forEach((type) => {
+            const block:Block = () => {
+                var imports:{ [typeName: string]:any } = {
+                    "com.googlecode.objectify.annotation.Entity": "",
+                    "com.googlecode.objectify.annotation.Id": "",
+                    "com.googlecode.objectify.annotation.Index": "",
+                    "com.googlecode.objectify.annotation.Parent": "",
+                    "com.googlecode.objectify.Key": ""
+                };
+
+                const toJavaType = function (type:string) {
+                    return toJavaTypeImpl(type, (type) => {
+                        imports[this.packageAsArray.concat([type]).join(".")] = "";
+                    });
+                };
+
+                // Add this type to list of all generated ones
+                this.generatedTypes.push(this.packageAsArray.concat([type.name()]).join("."));
+
+                const props = type.properties();
+
+                var wholeClassContent = [];
+
+                wholeClassContent.push("// Properties:");
+
+                props.forEach((prop) => {
+                    prop.annotations().forEach(a => {
+                        const ann = getAnnotation(a);
+                        if (ann.name === "orm.id") {
+                            wholeClassContent.push("@Id");
+                        }
+                    });
+
+                    wholeClassContent = wholeClassContent.concat([
+                        "private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"
+                    ]);
+                });
+
+                // Getters
+                wholeClassContent.push("");
+                wholeClassContent.push("// Getters:");
+
+                props.forEach((prop) => {
+                    wholeClassContent = wholeClassContent.concat([
+                        "public " + toJavaType(prop.type()[0]) + " get" + uppercaseFirst(prop.name()) + "() { ",
+                        () => ["return " + prop.name() + ";"],
+                        "};"]);
+                });
+
+                // Setters
+                wholeClassContent.push("");
+                wholeClassContent.push("// Setters:");
+
+                props.forEach((prop) => {
+                    wholeClassContent = wholeClassContent.concat([
+                        "public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ",
+                        () => ["this." + prop.name() + "=" + prop.name() + ";"],
+                        "};"
+                    ]);
+                });
+
+                const classDeclaration = [
+                    "/**",
+                    " * " + (type.displayName() || ""),
+                    " */",
+                    "@Entity",
+                    "public class " + type.name() + "{",
+                    () => wholeClassContent,
+                    "}"
+                ];
+
+                return this.generatePackageHeader()
+                    .concat(Object.keys(imports).map((type) => "import " + type + ";"))
+                    .concat([""])
+                    .concat(classDeclaration);
+            };
+
+            const stream = out.createOutStream(this.packageAsArray.concat([type.name() + ".java"]));
+            stream.write(printBlock("\t", block).join("\n"));
+            stream.close();
+        });
+
+        joinResouces(api.resources(), [], (fullUrl, r) => {
+            const urlParams:{[paramName: string]: {[attrName: string]: string}} = {};
+            var joinType;
+
+            r.uriParameters().forEach(p => {
+                urlParams[p.name()] = {};
+                p.annotations().forEach(a => {
+                    const ann = getAnnotation(a);
+
+                    urlParams[p.name()][ann.name] = ann.value;
+                });
+            });
+
+            r.methods().forEach((method) => {
+                method.annotations().forEach(a => {
+                    const annotation = getAnnotation(a);
+                    const processors = {
+                        "orm.create.request": (typeName) => {
+                            console.log("CREATE REQ", typeName);
+                        },
+                        "orm.delete.request": (typeName) => {
+                            console.log("DELETE REQ", typeName);
+                        },
+                        "orm.list.request": (typeName) => {
+                            console.log("LIST REQ", typeName);
+                        },
+                        "orm.get.request": (typeName) => {
+                            console.log("GET REQ", typeName);
+                        }
+                    };
+                    if (annotation.name in processors) {
+                        processors[annotation.name](annotation.value);
+                    }
+                });
+
+                console.log("============= ", method.method());
+                /*
+                 const methodLowCase = method.method().toLowerCase();
+                 if (methodLowCase === 'post' || methodLowCase === 'get') {
+                 // It could be "create" method
+                 method.body().forEach((kk) => {
+                 kk.type().forEach(type => {
+                 if (type.toLowerCase() === fullUrl[0] && methodLowCase === 'post') {
+                 console.log("FOUND CREATE METHOD for type", type);
+                 }
+
+                 console.log(type.toLowerCase(), methodLowCase);
+                 });
+                 });
+                 } else if (methodLowCase === 'delete' && joinType) {
+                 console.log("FOUND DELETE METHOD for type", joinType);
+                 // Delete the type
+                 } else if (methodLowCase === 'get' && joinType) {
+                 console.log("FOUND GET METHOD for type", joinType);
+                 }
+                 */
+                method.responses().forEach((resp) => {
+                    console.log("\t", resp.code().value());
+
+                    resp.body().forEach((body) => {
+                        console.log("\t\t", body.type().join(","));
+                    })
+                });
+            });
+        });
+
+        this.generateOfyHelper(out.createOutStream(this.packageAsArray.concat(["OfyHelper.java"])));
+    };
+
+    private generatePackageHeader(): (Block|string)[] {
+        return [
+            "// This file is generated.",
+            "// please don't edit it manually.",
+            "",
+            "package " + this.packageAsArray.join(".") + ";",
+            () => [""],
+            ""
+        ];
+    };
+}
+
 // const tempFolder = path.join(os.tmpdir(), "jdo_output");
+const gen = new JavaClassesGenerator(api, "com.example.dbotest.db");
 
-const javaFilesFolder = path.join(__dirname, "/../raml_samples/gae/src/main/java/");
-
+const baseGaeFolder = "/../raml_samples/gae/src/main/";
+const javaFilesFolder = path.join(__dirname, baseGaeFolder + "java/");
 console.log("Saving .java files to ", javaFilesFolder);
 
-mapTypes(api, "com.example.dbotest.db", {
+gen.mapTypes({
     createOutStream(name: string[]) {
         const file = path.join(javaFilesFolder, path.join.apply(null, name));
 
@@ -222,3 +384,7 @@ mapTypes(api, "com.example.dbotest.db", {
         };
     }
 });
+
+const webXmlFileFolder = path.join(__dirname, baseGaeFolder + "webapp/WEB-INF/web.xml");
+const resWebXmlFile = gen.processWebXml(fs.readFileSync(webXmlFileFolder).toString("utf8"));
+fs.writeFileSync(webXmlFileFolder, new Buffer(resWebXmlFile, "utf8"));

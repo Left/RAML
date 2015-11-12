@@ -4,9 +4,11 @@
 package com.example.dbotest.db;
 	
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Basic;
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.Parent;
+import com.googlecode.objectify.Key;
 
 /**
  * Pet that can live at some address and have an owner
@@ -14,36 +16,37 @@ import javax.persistence.Basic;
 @Entity
 public class Pet{
 	// Properties:
-	private Integer id;
-	private Integer owner;
+	@Id
+	private Long id;
+	private Long owner;
 	private String name;
-	private Integer addressId;
+	private Long addressId;
 	
 	// Getters:
-	public Integer getId() { 
+	public Long getId() { 
 		return id;
 	};
-	public Integer getOwner() { 
+	public Long getOwner() { 
 		return owner;
 	};
 	public String getName() { 
 		return name;
 	};
-	public Integer getAddressId() { 
+	public Long getAddressId() { 
 		return addressId;
 	};
 	
 	// Setters:
-	public void setId(Integer id) { 
+	public void setId(Long id) { 
 		this.id=id;
 	};
-	public void setOwner(Integer owner) { 
+	public void setOwner(Long owner) { 
 		this.owner=owner;
 	};
 	public void setName(String name) { 
 		this.name=name;
 	};
-	public void setAddressId(Integer addressId) { 
+	public void setAddressId(Long addressId) { 
 		this.addressId=addressId;
 	};
 }

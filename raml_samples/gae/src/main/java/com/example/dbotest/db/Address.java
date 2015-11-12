@@ -4,9 +4,11 @@
 package com.example.dbotest.db;
 	
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Basic;
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.Parent;
+import com.googlecode.objectify.Key;
 
 /**
  * An address (quite simple implementation)
@@ -14,14 +16,15 @@ import javax.persistence.Basic;
 @Entity
 public class Address{
 	// Properties:
-	private Integer id;
+	@Id
+	private Long id;
 	private String country;
 	private String city;
 	private String street;
 	private String house;
 	
 	// Getters:
-	public Integer getId() { 
+	public Long getId() { 
 		return id;
 	};
 	public String getCountry() { 
@@ -38,7 +41,7 @@ public class Address{
 	};
 	
 	// Setters:
-	public void setId(Integer id) { 
+	public void setId(Long id) { 
 		this.id=id;
 	};
 	public void setCountry(String country) { 

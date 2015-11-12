@@ -8,13 +8,13 @@ import com.google.appengine.api.users.UserServiceFactory;
 import java.io.IOException;
 import java.util.Properties;
 
-import javax.jdo.PersistenceManager;
-
 import com.example.dbotest.db.Person;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.googlecode.objectify.ObjectifyService;
 
 public class DboTestServlet extends HttpServlet {
 
@@ -22,11 +22,9 @@ public class DboTestServlet extends HttpServlet {
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws IOException {
 
-    PersistenceManager pm = PMFactory.get().getPersistenceManager();
-
     Person u = new Person();
-    pm.makePersistent(u);
-    pm.close();
+
+    ObjectifyService.ofy().save().entity(u).now();
 
     resp.setContentType("text/plain");
     resp.getWriter().println("Hello, this is a testing servlet. \n\n");

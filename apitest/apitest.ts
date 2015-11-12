@@ -113,9 +113,7 @@ var testType = function (){
                                 return "\t\t\t\t" + typp.name()  + "\n" +
                                     props.map((p) => "\t\t\t\t\t" + p.name() + "\n" + p.annotations().map(
                                         (aa) => {
-                                            const s = <
-                                                StructuredValue>(<any>((<AnnotationRef>aa).value(
-                                            )));
+                                            const s = <StructuredValue>(<any>((<AnnotationRef>aa).value()));
                                             var iLowLevelASTNode = s.lowLevel();
                                             return
                                                 "\t\t\t\t\t\t" + aa.attr.value().valueName() + " " + s.valueName() + ":" + iLowLevelASTNode.value() + "\n";

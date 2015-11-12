@@ -29,7 +29,7 @@ types:
 
   Person:
     type: object
-    displayName: System's user
+    displayName: System's person
     properties:
       id:
         type: number
@@ -38,8 +38,8 @@ types:
         type: string
         (orm.indexed): true
       lastName: string
-      homePhone: Phone
-      cellPhone: Phone
+      # homePhone: Phone
+      # cellPhone: Phone
       addressId:
         type: number
         (orm.join): Address
@@ -54,7 +54,7 @@ types:
         (orm.id):
       owner:
         type: number
-        (orm.join): User
+        (orm.join): person
       name:
         type: string
       addressId:
@@ -63,11 +63,12 @@ types:
 
 /person:
   post:
+    (orm.create.request): Person
     body:
       application/json:
         type: Person
     description: |
-      Creates new user
+      Creates new person
     responses:
       200:
         body:
@@ -77,10 +78,24 @@ types:
         body:
       500:
         body:
-  /{userId}:
+  get:
+    (orm.list.request): Person
+    description: |
+      Returns persons list
+    responses:
+      200:
+        body:
+          application/json:
+            type: Person[]
+  /{personId}:
+    uriParameters:
+      personId:
+        (orm.join): Person
+        type: number
     get:
+      (orm.get.request): Person
       description: |
-        Get the user
+        Get the person
       responses:
         200:
           body:
@@ -89,7 +104,8 @@ types:
 
     delete:
       description: |
-        Delete the user
+        Delete the person
       responses:
         200:
           body:
+      (orm.delete.request): Person

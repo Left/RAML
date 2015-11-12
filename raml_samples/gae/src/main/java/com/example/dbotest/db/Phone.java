@@ -4,9 +4,11 @@
 package com.example.dbotest.db;
 	
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Basic;
+import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.Parent;
+import com.googlecode.objectify.Key;
 
 /**
  * 

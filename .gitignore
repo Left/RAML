@@ -1,2 +1,3 @@
 # Created by .ignore support plugin (hsz.mobi)
 /raml_samples/gae/target
+/node_modules
