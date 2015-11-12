@@ -1,0 +1,11 @@
+{
+    "name": "RAML-demo",
+	"description": "POC of RAML java generator demo",
+	"version": "0.0.1",
+    "dependencies": {
+   	},
+	"author": [{
+		"name": "Vadim Ridosh",
+		"email": "vadim@genuitec.com"
+	}]
+}
