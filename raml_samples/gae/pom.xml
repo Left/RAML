@@ -37,11 +37,11 @@
             <version>2.5</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
+<!--         <dependency>
             <groupId>jstl</groupId>
             <artifactId>jstl</artifactId>
             <version>1.2</version>
-        </dependency>
+        </dependency> -->
         <!-- [START Objectify_Dependencies] -->
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -52,6 +52,11 @@
             <groupId>com.googlecode.objectify</groupId>
             <artifactId>objectify</artifactId>
             <version>${objectify.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.4</version>
         </dependency>
 <!-- [END Objectify_Dependencies] -->
 

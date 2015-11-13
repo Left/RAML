@@ -212,9 +212,13 @@ class JavaClassesGenerator {
               ]);
         };
 
+        this.writeBlockToStream(stream, block);
+    }
+
+    private writeBlockToStream(stream: TextStream, block: Block) {
         stream.write(printBlock("\t", block).join("\n"));
         stream.close();
-    }
+    };
 
     mapTypes(out:OutFolder): void {
         api.types().forEach((type) => {
@@ -294,9 +298,9 @@ class JavaClassesGenerator {
                     .concat(classDeclaration);
             };
 
-            const stream = out.createOutStream(this.packageAsArray.concat([type.name() + ".java"]));
-            stream.write(printBlock("\t", block).join("\n"));
-            stream.close();
+            this.writeBlockToStream(
+                out.createOutStream(this.packageAsArray.concat([type.name() + ".java"])),
+                block);
         });
 
         joinResouces(api.resources(), [], (fullUrl, r) => {
@@ -319,16 +323,16 @@ class JavaClassesGenerator {
                     const annotation = getAnnotation(a);
                     const processors = {
                         "orm.create.request": (typeName) => {
-                            servletMethods.push("create");
+                            servletMethods.push(method.method());
                         },
                         "orm.delete.request": (typeName) => {
-                            servletMethods.push("delete");
+                            servletMethods.push(method.method());
                         },
                         "orm.list.request": (typeName) => {
-                            servletMethods.push("list");
+                            servletMethods.push(method.method());
                         },
                         "orm.get.request": (typeName) => {
-                            servletMethods.push("get");
+                            servletMethods.push(method.method());
                         }
                     };
                     if (annotation.name in processors) {
@@ -336,26 +340,6 @@ class JavaClassesGenerator {
                     }
                 });
 
-                /*
-                 const methodLowCase = method.method().toLowerCase();
-                 if (methodLowCase === 'post' || methodLowCase === 'get') {
-                 // It could be "create" method
-                 method.body().forEach((kk) => {
-                 kk.type().forEach(type => {
-                 if (type.toLowerCase() === fullUrl[0] && methodLowCase === 'post') {
-                 console.log("FOUND CREATE METHOD for type", type);
-                 }
-
-                 console.log(type.toLowerCase(), methodLowCase);
-                 });
-                 });
-                 } else if (methodLowCase === 'delete' && joinType) {
-                 console.log("FOUND DELETE METHOD for type", joinType);
-                 // Delete the type
-                 } else if (methodLowCase === 'get' && joinType) {
-                 console.log("FOUND GET METHOD for type", joinType);
-                 }
-                 */
                 method.responses().forEach((resp) => {
                     console.log("\t", resp.code().value());
 
@@ -366,17 +350,69 @@ class JavaClassesGenerator {
             });
 
             if (servletMethods.length > 0) {
+                const javaClassName = "Servlet" + (this.servlets.length + 1);
                 this.servlets.push({
                     urlPattern() {
                         return "/" + fullUrl.join("/");
                     },
                     name() {
-                        return fullUrl.map(uppercaseFirst).join();
+                        return javaClassName;
                     },
                     className() {
-                        return fullUrl.map(uppercaseFirst).join() + "_Servlet";
+                        return javaClassName;
                     }
                 });
+
+                const imports = [
+                    "java.io.IOException",
+                    "java.util.Date",
+                    "javax.servlet.http.HttpServlet",
+                    "javax.servlet.http.HttpServletRequest",
+                    "javax.servlet.http.HttpServletResponse",
+                    "java.io.InputStream",
+                    "java.io.InputStreamReader",
+                    "com.googlecode.objectify.ObjectifyService",
+                    "com.google.gson.Gson"
+                ];
+
+                // Generate servlet's code here
+                const block = this.generatePackageHeader()
+                    .concat(imports.map(type => "import " + type + ";"))
+                    .concat([
+                        "",
+                        "public class " + javaClassName + " extends HttpServlet {",
+                        () => Array.prototype.concat.apply([], servletMethods.map(
+                            (method) => {
+                                return [
+                                    "@Override",
+                                    "public void do" + uppercaseFirst(method) + "(HttpServletRequest req, HttpServletResponse resp) throws IOException {",
+                                    () => Array.prototype.concat.apply([], [
+                                        [
+                                            "// Process request here",
+                                        ],
+                                        (method == "post") ?
+                                        [
+                                            "// here we should process POST",
+                                            "InputStream strm = req.getInputStream();",
+                                            "Person person = new Gson().fromJson(new InputStreamReader(strm), Person.class);",
+                                            "",
+                                            "ObjectifyService.ofy().save().entity(person).now();"
+                                        ] :
+                                        []
+                                    ]),
+                                    "}",
+                                    ""
+                                ];
+                            }
+                        )),
+                        "}"
+                    ])
+
+
+                // write servlet's code to stream
+                this.writeBlockToStream(
+                    out.createOutStream(this.packageAsArray.concat([javaClassName + ".java"])),
+                    () => block);
             }
 
         });

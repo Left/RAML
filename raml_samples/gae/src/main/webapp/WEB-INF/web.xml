@@ -24,19 +24,19 @@
         <listener-class>com.example.dbotest.db.OfyHelper</listener-class>
     </listener>
     <servlet>
-        <servlet-name>Person</servlet-name>
-        <servlet-class>Person_Servlet</servlet-class>
+        <servlet-name>Servlet1</servlet-name>
+        <servlet-class>Servlet1</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>Person</servlet-name>
+        <servlet-name>Servlet1</servlet-name>
         <url-pattern>/person</url-pattern>
     </servlet-mapping>
     <servlet>
-        <servlet-name>Person,{personId}</servlet-name>
-        <servlet-class>Person,{personId}_Servlet</servlet-class>
+        <servlet-name>Servlet2</servlet-name>
+        <servlet-class>Servlet2</servlet-class>
     </servlet>
     <servlet-mapping>
-        <servlet-name>Person,{personId}</servlet-name>
+        <servlet-name>Servlet2</servlet-name>
         <url-pattern>/person/{personId}</url-pattern>
     </servlet-mapping>
 <!-- [END Objectify] -->
