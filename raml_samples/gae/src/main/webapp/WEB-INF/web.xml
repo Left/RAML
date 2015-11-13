@@ -23,5 +23,21 @@
     <listener>
         <listener-class>com.example.dbotest.db.OfyHelper</listener-class>
     </listener>
+    <servlet>
+        <servlet-name>Person</servlet-name>
+        <servlet-class>Person_Servlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Person</servlet-name>
+        <url-pattern>/person</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>Person,{personId}</servlet-name>
+        <servlet-class>Person,{personId}_Servlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Person,{personId}</servlet-name>
+        <url-pattern>/person/{personId}</url-pattern>
+    </servlet-mapping>
 <!-- [END Objectify] -->
 </web-app>

@@ -88,12 +88,20 @@ const joinResouces = (r:Resource[], parentUrl:string[], processor:(fullUrl:strin
     });
 };
 
+interface Servlet {
+    urlPattern(): string;
+    name(): string;
+    className(): string;
+};
+
 /**
  *
  **/
 class JavaClassesGenerator {
     private packageAsArray: string[];
     private generatedTypes: string[] = [];
+
+    private servlets: Servlet[] = [];
 
     constructor(private api:Api, private packageName:string) {
         this.packageAsArray = this.packageName.split(".");
@@ -110,22 +118,24 @@ class JavaClassesGenerator {
         if (start > 0 && end > start) {
             // console.log(lines.slice(start + 1, end));
 
-            const xmlBlock = (obj:{[name: string]: any}):Block => {
+            const xmlBlock = (objs: any[]):Block => {
                 var res = [];
-                for (const n in obj) {
-                    if ((typeof obj[n]) === 'string') {
-                        res.push("<" + n + ">" + obj[n] + "</" + n + ">");
-                    } else {
-                        res.push("<" + n + ">");
-                        res = res.concat(xmlBlock(obj[n]));
-                        res.push("</" + n + ">");
+                objs.forEach((obj) => {
+                    for (const n in obj) {
+                        if ((typeof obj[n]) === 'string') {
+                            res.push("<" + n + ">" + obj[n] + "</" + n + ">");
+                        } else {
+                            res.push("<" + n + ">");
+                            res = res.concat(xmlBlock([obj[n]]));
+                            res.push("</" + n + ">");
+                        }
                     }
-                }
+                });
                 return () => res;
             };
 
             const replacementLines = printBlock("    ",
-                xmlBlock({
+                xmlBlock((<any[]>[{
                     "filter": {
                         "filter-name": "ObjectifyFilter",
                         "filter-class": "com.googlecode.objectify.ObjectifyFilter"
@@ -137,7 +147,18 @@ class JavaClassesGenerator {
                     "listener": {
                         "listener-class": this.packageAsArray.concat(["OfyHelper"]).join(".")
                     }
-                }), 1);
+                }]).concat(this.servlets.map((servlet) => {
+                    return {
+                        "servlet": {
+                            "servlet-name": servlet.name(),
+                            "servlet-class": servlet.className()
+                        },
+                        "servlet-mapping": {
+                            "servlet-name": servlet.name(),
+                            "url-pattern": servlet.urlPattern()
+                        }
+                    };
+                }))), 1);
 
             return lines.slice(0, start+1)
                 .concat(replacementLines)
@@ -291,21 +312,23 @@ class JavaClassesGenerator {
                 });
             });
 
+            const servletMethods = [];
+
             r.methods().forEach((method) => {
                 method.annotations().forEach(a => {
                     const annotation = getAnnotation(a);
                     const processors = {
                         "orm.create.request": (typeName) => {
-                            console.log("CREATE REQ", typeName);
+                            servletMethods.push("create");
                         },
                         "orm.delete.request": (typeName) => {
-                            console.log("DELETE REQ", typeName);
+                            servletMethods.push("delete");
                         },
                         "orm.list.request": (typeName) => {
-                            console.log("LIST REQ", typeName);
+                            servletMethods.push("list");
                         },
                         "orm.get.request": (typeName) => {
-                            console.log("GET REQ", typeName);
+                            servletMethods.push("get");
                         }
                     };
                     if (annotation.name in processors) {
@@ -313,7 +336,6 @@ class JavaClassesGenerator {
                     }
                 });
 
-                console.log("============= ", method.method());
                 /*
                  const methodLowCase = method.method().toLowerCase();
                  if (methodLowCase === 'post' || methodLowCase === 'get') {
@@ -342,6 +364,21 @@ class JavaClassesGenerator {
                     })
                 });
             });
+
+            if (servletMethods.length > 0) {
+                this.servlets.push({
+                    urlPattern() {
+                        return "/" + fullUrl.join("/");
+                    },
+                    name() {
+                        return fullUrl.map(uppercaseFirst).join();
+                    },
+                    className() {
+                        return fullUrl.map(uppercaseFirst).join() + "_Servlet";
+                    }
+                });
+            }
+
         });
 
         this.generateOfyHelper(out.createOutStream(this.packageAsArray.concat(["OfyHelper.java"])));
