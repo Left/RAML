@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-    <servlet>
-        <servlet-name>test</servlet-name>
-        <servlet-class>com.example.dbotest.DboTestServlet</servlet-class>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>test</servlet-name>
-        <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-
-
   <!-- [START Objectify] -->
     <filter>
         <filter-name>ObjectifyFilter</filter-name>
@@ -24,20 +13,20 @@
         <listener-class>com.example.dbotest.db.OfyHelper</listener-class>
     </listener>
     <servlet>
+        <servlet-name>Servlet2</servlet-name>
+        <servlet-class>com.example.dbotest.db.Servlet2</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Servlet2</servlet-name>
+        <url-pattern>/person/*</url-pattern>
+    </servlet-mapping>
+    <servlet>
         <servlet-name>Servlet1</servlet-name>
-        <servlet-class>Servlet1</servlet-class>
+        <servlet-class>com.example.dbotest.db.Servlet1</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>Servlet1</servlet-name>
         <url-pattern>/person</url-pattern>
-    </servlet-mapping>
-    <servlet>
-        <servlet-name>Servlet2</servlet-name>
-        <servlet-class>Servlet2</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>Servlet2</servlet-name>
-        <url-pattern>/person/{personId}</url-pattern>
     </servlet-mapping>
 <!-- [END Objectify] -->
 </web-app>

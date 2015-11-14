@@ -1,5 +1,3 @@
-/// <reference path="./node.d.ts" />
-
 /// <reference path="node_modules/raml-1-0-parser/parser-typings/raml1Parser.d.ts" />
 
 // This assigns global.RAML
@@ -8,6 +6,7 @@ import raml = require("raml-1-0-parser");
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
+
 
 interface TextStream {
     write(str: string): void;
@@ -74,7 +73,7 @@ interface Servlet {
     urlPattern(): string;
     name(): string;
     className(): string;
-};
+}
 
 /**
  *
@@ -84,6 +83,8 @@ class JavaClassesGenerator {
     private generatedTypes: string[] = [];
 
     private servlets: Servlet[] = [];
+
+    static URL_PARAM_TO_STAR = s => s.replace(/\{[^}]*\}/gi, "*");
 
     constructor(private api:raml.Api, private packageName:string) {
         this.packageAsArray = this.packageName.split(".");
@@ -104,17 +105,28 @@ class JavaClassesGenerator {
                 var res = [];
                 objs.forEach((obj) => {
                     for (const n in obj) {
-                        if ((typeof obj[n]) === 'string') {
-                            res.push("<" + n + ">" + obj[n] + "</" + n + ">");
-                        } else {
-                            res.push("<" + n + ">");
-                            res = res.concat(xmlBlock([obj[n]]));
-                            res.push("</" + n + ">");
+                        if (obj.hasOwnProperty(n)) {
+                            //noinspection JSUnfilteredForInLoop
+                            if ((typeof obj[n]) === 'string') {
+                                //noinspection JSUnfilteredForInLoop
+                                res.push("<" + n + ">" + obj[n] + "</" + n + ">");
+                            } else {
+                                res.push("<" + n + ">");
+                                res = res.concat(xmlBlock([obj[n]]));
+                                res.push("</" + n + ">");
+                            }
                         }
                     }
                 });
                 return () => res;
             };
+
+            // Let's sort servlets in a special order
+            // to avoid confusing between /some and /some/*
+            this.servlets = this.servlets.sort((a, b) => {
+                return b.urlPattern().localeCompare(a.urlPattern());
+            });
+
 
             const replacementLines = printBlock("    ",
                 xmlBlock((<any[]>[{
@@ -133,7 +145,7 @@ class JavaClassesGenerator {
                     return {
                         "servlet": {
                             "servlet-name": servlet.name(),
-                            "servlet-class": servlet.className()
+                            "servlet-class": this.packageAsArray.concat([servlet.className()]).join(".")
                         },
                         "servlet-mapping": {
                             "servlet-name": servlet.name(),
@@ -194,10 +206,10 @@ class JavaClassesGenerator {
               ]);
         };
 
-        this.writeBlockToStream(stream, block);
+        JavaClassesGenerator.writeBlockToStream(stream, block);
     }
 
-    private writeBlockToStream(stream: TextStream, block: Block) {
+    private static writeBlockToStream(stream: TextStream, block: Block) {
         stream.write(printBlock("\t", block).join("\n"));
         stream.close();
     };
@@ -280,14 +292,13 @@ class JavaClassesGenerator {
                     .concat(classDeclaration);
             };
 
-            this.writeBlockToStream(
+            JavaClassesGenerator.writeBlockToStream(
                 out.createOutStream(this.packageAsArray.concat([type.name() + ".java"])),
                 block);
         });
 
         joinResouces(this.api.resources(), [], (fullUrl, r) => {
             const urlParams:{[paramName: string]: {[attrName: string]: string}} = {};
-            var joinType;
 
             r.uriParameters().forEach(p => {
                 urlParams[p.name()] = {};
@@ -304,16 +315,16 @@ class JavaClassesGenerator {
                 method.annotations().forEach(a => {
                     const annotation = getAnnotation(a);
                     const processors = {
-                        "orm.create.request": (typeName) => {
+                        "orm.create.request": (/*typeName*/) => {
                             servletMethods.push(method.method());
                         },
-                        "orm.delete.request": (typeName) => {
+                        "orm.delete.request": (/*typeName*/) => {
                             servletMethods.push(method.method());
                         },
-                        "orm.list.request": (typeName) => {
+                        "orm.list.request": (/*typeName*/) => {
                             servletMethods.push(method.method());
                         },
-                        "orm.get.request": (typeName) => {
+                        "orm.get.request": (/*typeName*/) => {
                             servletMethods.push(method.method());
                         }
                     };
@@ -331,11 +342,13 @@ class JavaClassesGenerator {
                 });
             });
 
+
             if (servletMethods.length > 0) {
                 const javaClassName = "Servlet" + (this.servlets.length + 1);
                 this.servlets.push({
                     urlPattern() {
-                        return "/" + fullUrl.join("/");
+                        //
+                        return "/" + fullUrl.map(JavaClassesGenerator.URL_PARAM_TO_STAR).join("/");
                     },
                     name() {
                         return javaClassName;
@@ -352,7 +365,10 @@ class JavaClassesGenerator {
                     "javax.servlet.http.HttpServletRequest",
                     "javax.servlet.http.HttpServletResponse",
                     "java.io.InputStream",
+                    "java.io.OutputStream",
                     "java.io.InputStreamReader",
+                    "java.io.OutputStreamWriter",
+                    "java.util.Collection",
                     "com.googlecode.objectify.ObjectifyService",
                     "com.google.gson.Gson"
                 ];
@@ -365,6 +381,27 @@ class JavaClassesGenerator {
                         "public class " + javaClassName + " extends HttpServlet {",
                         () => Array.prototype.concat.apply([], servletMethods.map(
                             (method) => {
+                                // const className = ;
+
+                                const methodValue = (({
+                                    "post": () => [
+                                        "// here we should process POST",
+                                        "InputStream strm = req.getInputStream();",
+                                        "Person person = new Gson().fromJson(new InputStreamReader(strm), Person.class);",
+                                        "",
+                                        "ObjectifyService.ofy().save().entity(person).now();"
+                                    ],
+                                    "get": () => [
+                                        "// here we should process GET",
+                                        "Collection<Person> result = ObjectifyService.ofy().load().type(Person.class).list();",
+                                        "resp.setStatus(200);",
+                                        "resp.setContentType(\"application/json\");",
+                                        "",
+                                        "new Gson().toJson(result, resp.getWriter());",
+                                        "resp.flushBuffer();"
+                                    ]
+                                }[method]) || (() => [])) ();
+
                                 return [
                                     "@Override",
                                     "public void do" + uppercaseFirst(method) + "(HttpServletRequest req, HttpServletResponse resp) throws IOException {",
@@ -372,15 +409,7 @@ class JavaClassesGenerator {
                                         [
                                             "// Process request here",
                                         ],
-                                        (method == "post") ?
-                                        [
-                                            "// here we should process POST",
-                                            "InputStream strm = req.getInputStream();",
-                                            "Person person = new Gson().fromJson(new InputStreamReader(strm), Person.class);",
-                                            "",
-                                            "ObjectifyService.ofy().save().entity(person).now();"
-                                        ] :
-                                        []
+                                        methodValue
                                     ]),
                                     "}",
                                     ""
@@ -388,11 +417,11 @@ class JavaClassesGenerator {
                             }
                         )),
                         "}"
-                    ])
+                    ]);
 
 
                 // write servlet's code to stream
-                this.writeBlockToStream(
+                JavaClassesGenerator.writeBlockToStream(
                     out.createOutStream(this.packageAsArray.concat([javaClassName + ".java"])),
                     () => block);
             }
@@ -412,11 +441,11 @@ class JavaClassesGenerator {
             ""
         ];
     };
-
+/*
     private getTypeFromName(name:string): any {
        return this.api.types().filter((t) => t.name() === name)[0];
     };
-
+*/
 }
 
 // Source file
