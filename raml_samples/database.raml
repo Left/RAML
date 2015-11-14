@@ -38,7 +38,7 @@ types:
         type: number
         (orm.join): Address
         required: false
-      yearOfBorn: number
+      yearOfBirth: number
 
   Pet:
     type: object
@@ -69,10 +69,6 @@ types:
         body:
           application/json:
             type: Person
-      400:
-        body:
-      500:
-        body:
   get:
     (orm.list.request): Person
     description: |
@@ -83,10 +79,10 @@ types:
           application/json:
             type: Person[]
   /{personId}:
-    uriParameters:
-      personId:
-        (orm.join): Person
-        type: number
+    # uriParameters:
+    #   personId:
+    #     (orm.join): Person
+    #     type: number
     get:
       (orm.get.request): Person
       description: |
@@ -98,9 +94,9 @@ types:
               type: Person
 
     delete:
+      (orm.delete.request): Person
       description: |
         Delete the person
       responses:
         200:
           body:
-      (orm.delete.request): Person

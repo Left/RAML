@@ -309,30 +309,35 @@ class JavaClassesGenerator {
                 });
             });
 
-            const servletMethods = [];
+            interface ServletMethod {
+                httpMethod: string;
+                type: string;
+            }
+
+            const servletMethods: { [annotationName: string]: ServletMethod } = {};
 
             r.methods().forEach((method) => {
                 method.annotations().forEach(a => {
                     const annotation = getAnnotation(a);
+                    const defProcessor = (typeName) => {
+                        servletMethods[annotation.name] = {
+                            httpMethod: method.method(),
+                            type: typeName
+                        };
+                    };
+
                     const processors = {
-                        "orm.create.request": (/*typeName*/) => {
-                            servletMethods.push(method.method());
-                        },
-                        "orm.delete.request": (/*typeName*/) => {
-                            servletMethods.push(method.method());
-                        },
-                        "orm.list.request": (/*typeName*/) => {
-                            servletMethods.push(method.method());
-                        },
-                        "orm.get.request": (/*typeName*/) => {
-                            servletMethods.push(method.method());
-                        }
+                        "orm.create.request": defProcessor,
+                        "orm.delete.request": defProcessor,
+                        "orm.list.request": defProcessor,
+                        "orm.get.request": defProcessor
                     };
                     if (annotation.name in processors) {
                         processors[annotation.name](annotation.value);
                     }
                 });
 
+                /*
                 method.responses().forEach((resp) => {
                     console.log("\t", resp.code().value());
 
@@ -340,10 +345,11 @@ class JavaClassesGenerator {
                         console.log("\t\t", body.type().join(","));
                     })
                 });
+                */
             });
 
 
-            if (servletMethods.length > 0) {
+            if (Object.keys(servletMethods).length > 0) {
                 const javaClassName = "Servlet" + (this.servlets.length + 1);
                 this.servlets.push({
                     urlPattern() {
@@ -379,35 +385,48 @@ class JavaClassesGenerator {
                     .concat([
                         "",
                         "public class " + javaClassName + " extends HttpServlet {",
-                        () => Array.prototype.concat.apply([], servletMethods.map(
+                        () => Array.prototype.concat.apply([], Object.keys(servletMethods).map(
                             (method) => {
-                                // const className = ;
+                                const httpMethod = servletMethods[method].httpMethod;
+                                const className = servletMethods[method].type;
 
                                 const methodValue = (({
-                                    "post": () => [
+                                    "orm.create.request": () => [
                                         "// here we should process POST",
                                         "InputStream strm = req.getInputStream();",
-                                        "Person person = new Gson().fromJson(new InputStreamReader(strm), Person.class);",
+                                        className + " obj = new Gson().fromJson(new InputStreamReader(strm), " + className + ".class);",
                                         "",
-                                        "ObjectifyService.ofy().save().entity(person).now();"
+                                        "ObjectifyService.ofy().save().entity(obj).now();"
                                     ],
-                                    "get": () => [
+                                    "orm.list.request": () => [
                                         "// here we should process GET",
-                                        "Collection<Person> result = ObjectifyService.ofy().load().type(Person.class).list();",
+                                        "Collection<" + className + "> result = ObjectifyService.ofy().load().type(" + className + ".class).list();",
                                         "resp.setStatus(200);",
                                         "resp.setContentType(\"application/json\");",
                                         "",
                                         "new Gson().toJson(result, resp.getWriter());",
                                         "resp.flushBuffer();"
+                                    ],
+                                    "orm.delete.request": () => [
+                                        //"// here we should process DELETE",
+                                        //"Collection<" + className + "> result = ObjectifyService.ofy().load().type(" +
+                                        //    className + ".class).ids(req. ).list();",
+                                        //"ObjectifyService.ofy().delete(result).now();",
+                                        //
+                                        //"resp.setStatus(200);",
+                                        //"resp.setContentType(\"application/json\");",
+                                        //"",
+                                        //"new Gson().toJson(result, resp.getWriter());",
+                                        //"resp.flushBuffer();"
                                     ]
                                 }[method]) || (() => [])) ();
 
                                 return [
                                     "@Override",
-                                    "public void do" + uppercaseFirst(method) + "(HttpServletRequest req, HttpServletResponse resp) throws IOException {",
+                                    "public void do" + uppercaseFirst(httpMethod) + "(HttpServletRequest req, HttpServletResponse resp) throws IOException {",
                                     () => Array.prototype.concat.apply([], [
                                         [
-                                            "// Process request here",
+                                            "// Generated code, do not change",
                                         ],
                                         methodValue
                                     ]),

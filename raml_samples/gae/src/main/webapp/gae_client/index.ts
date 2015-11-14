@@ -26,7 +26,7 @@ function createPerson() {
     http.send(JSON.stringify({
         "firstName": firstName,
         "lastName": secondName,
-        "yearOfBorn": 1930 + (random % 85)
+        "yearOfBirth": 1930 + (random % 85)
     }));
 
 }
@@ -40,6 +40,20 @@ function listPersons() {
     http.onreadystatechange = function() {//Call a function when the state changes.
         if(http.readyState == 4 && http.status == 200) {
             document.getElementById("persons").innerHTML = http.responseText;
+        }
+    }
+
+    http.send();
+}
+
+function deletePerson() {
+    var http = new XMLHttpRequest();
+    http.open("GET", "/person/" +
+        (<HTMLInputElement>document.getElementById("personIdToDelete")).value, true);
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            alert(http.responseText);
         }
     }
 
