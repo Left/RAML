@@ -421,18 +421,16 @@ class JavaClassesGenerator {
 
 // Source file
 var fName = path.resolve(__dirname + "/raml_samples/database.raml");
-
+// RAML JS API
 const api:raml.Api = raml.loadApi(fName).getOrThrow();
 
-
-// const tempFolder = path.join(os.tmpdir(), "jdo_output");
-const gen = new JavaClassesGenerator(api, "com.example.dbotest.db");
+const generator = new JavaClassesGenerator(api, "com.example.dbotest.db");
 
 const baseGaeFolder = "/raml_samples/gae/src/main/";
 const javaFilesFolder = path.join(__dirname, baseGaeFolder + "java/");
 console.log("Saving .java files to ", javaFilesFolder);
 
-gen.mapTypes({
+generator.mapTypes({
     createOutStream(name: string[]) {
         const file = path.join(javaFilesFolder, path.join.apply(null, name));
 
@@ -457,5 +455,5 @@ gen.mapTypes({
 });
 
 const webXmlFileFolder = path.join(__dirname, baseGaeFolder + "webapp/WEB-INF/web.xml");
-const resWebXmlFile = gen.processWebXml(fs.readFileSync(webXmlFileFolder).toString("utf8"));
+const resWebXmlFile = generator.processWebXml(fs.readFileSync(webXmlFileFolder).toString("utf8"));
 fs.writeFileSync(webXmlFileFolder, new Buffer(resWebXmlFile, "utf8"));
