@@ -1,31 +1,13 @@
 /// <reference path="./node.d.ts" />
-/// <reference path="./raml003parser.d.ts" />
-/// <reference path="./raml003factory.d.ts" />
-/// <reference path="./../highLevelImpl.d.ts" />
-/// <reference path="./../lowLevelAST.d.ts" />
 
-import {Api} from "./raml003parser";
-import {DataElement} from "./raml003parser";
-import {AnnotationRef} from "./raml003parser";
-import {StructuredValue} from "./highLevelImpl";
-import {Stream} from "stream";
-import {Resource} from "./raml003parser";
+/// <reference path="node_modules/raml-1-0-parser/parser-typings/raml1Parser.d.ts" />
 
 // This assigns global.RAML
-require('e:/git/raml-js-parser-2/src/bundle.js');
+import raml = require("raml-1-0-parser");
 
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
-var fName = path.resolve(__dirname + "/../raml_samples/database.raml");
-
-const ramlInterface = (<any>global).RAML;
-
-const api:Api = ramlInterface.loadApi(fName).getOrElse(null);
-
-const getTypeFromName = function(name:string): any {
-    return api.types().filter((t) => t.name() === name)[0];
-};
 
 interface TextStream {
     write(str: string): void;
@@ -60,7 +42,7 @@ const uppercaseFirst = (str: string) : string => {
 };
 
 const getAnnotation = (a): { name: string, value: string} => {
-    const s = <StructuredValue>(<any>((<AnnotationRef>a).value()));
+    const s = <raml.StructuredValue>(<any>((<raml.AnnotationRef>a).value()));
     var iLowLevelASTNode = s.lowLevel();
 
     return { name: s.valueName(), value: iLowLevelASTNode.value()};
@@ -79,7 +61,7 @@ function toJavaTypeImpl(type:string, onObject:(typeName:string) => void): string
     }
 }
 
-const joinResouces = (r:Resource[], parentUrl:string[], processor:(fullUrl:string[], r:Resource) => void) => {
+const joinResouces = (r:raml.Resource[], parentUrl:string[], processor:(fullUrl:string[], r:raml.Resource) => void) => {
     r.forEach((res) => {
         const url = res.relativeUri().value().split("/").filter(el => el !== "");
 
@@ -103,7 +85,7 @@ class JavaClassesGenerator {
 
     private servlets: Servlet[] = [];
 
-    constructor(private api:Api, private packageName:string) {
+    constructor(private api:raml.Api, private packageName:string) {
         this.packageAsArray = this.packageName.split(".");
     }
 
@@ -221,7 +203,7 @@ class JavaClassesGenerator {
     };
 
     mapTypes(out:OutFolder): void {
-        api.types().forEach((type) => {
+        this.api.types().forEach((type) => {
             const block:Block = () => {
                 var imports:{ [typeName: string]:any } = {
                     "com.googlecode.objectify.annotation.Entity": "",
@@ -303,7 +285,7 @@ class JavaClassesGenerator {
                 block);
         });
 
-        joinResouces(api.resources(), [], (fullUrl, r) => {
+        joinResouces(this.api.resources(), [], (fullUrl, r) => {
             const urlParams:{[paramName: string]: {[attrName: string]: string}} = {};
             var joinType;
 
@@ -430,12 +412,23 @@ class JavaClassesGenerator {
             ""
         ];
     };
+
+    private getTypeFromName(name:string): any {
+       return this.api.types().filter((t) => t.name() === name)[0];
+    };
+
 }
+
+// Source file
+var fName = path.resolve(__dirname + "/raml_samples/database.raml");
+
+const api:raml.Api = raml.loadApi(fName).getOrThrow();
+
 
 // const tempFolder = path.join(os.tmpdir(), "jdo_output");
 const gen = new JavaClassesGenerator(api, "com.example.dbotest.db");
 
-const baseGaeFolder = "/../raml_samples/gae/src/main/";
+const baseGaeFolder = "/raml_samples/gae/src/main/";
 const javaFilesFolder = path.join(__dirname, baseGaeFolder + "java/");
 console.log("Saving .java files to ", javaFilesFolder);
 
