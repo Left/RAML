@@ -79,10 +79,10 @@ types:
           application/json:
             type: Person[]
   /{personId}:
-    # uriParameters:
-    #   personId:
-    #     (orm.join): Person
-    #     type: number
+    uriParameters:
+       personId:
+         (orm.join): Person
+         type: number
     get:
       (orm.get.request): Person
       description: |

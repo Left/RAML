@@ -75,14 +75,41 @@ interface Servlet {
     className(): string;
 }
 
+interface TypeToSerialize {
+    shortName: string;
+    fullName: string;
+    idFieldName: string;
+    idFieldType: string;
+};
+
+function forEachValue<T>(o: { [index: string]: T }, p: (k: string, v: T) => void): void {
+    Object.keys(o).forEach(k => {
+       if (o.hasOwnProperty(k)) {
+           p(k, o[k]);
+       }
+    });
+}
+
+function mapValues<T, O>(o: { [index: string]: T }, p: (k: string, v: T) => O): O[] {
+    return Array.prototype.concat.apply([],
+        Object.keys(o).map(k => {
+            if (o.hasOwnProperty(k)) {
+                return [ p(k, o[k]) ];
+            } else {
+                return [];
+            }
+        })
+    );
+}
+
 /**
  *
  **/
 class JavaClassesGenerator {
     private packageAsArray: string[];
-    private generatedTypes: string[] = [];
 
     private servlets: Servlet[] = [];
+    private typesToSerialize: { [name: string]: TypeToSerialize } = {};
 
     static URL_PARAM_TO_STAR = s => s.replace(/\{[^}]*\}/gi, "*");
 
@@ -90,7 +117,7 @@ class JavaClassesGenerator {
         this.packageAsArray = this.packageName.split(".");
     }
 
-    processWebXml(oldContent:string):string  {
+    public processWebXml(oldContent:string):string  {
         // TODO: Use some real XML parser to work with XML file
 
         const lines = oldContent.split(/\r\n|\r|\n/);
@@ -164,24 +191,23 @@ class JavaClassesGenerator {
 
     private generateOfyHelper(stream: TextStream):void {
         const block:Block = () => {
-            var imports:{ [typeName: string]:any } = {
-                "com.googlecode.objectify.Objectify": "",
-                "com.googlecode.objectify.ObjectifyFactory": "",
-                "com.googlecode.objectify.ObjectifyService": "",
-                "javax.servlet.ServletContextListener": "",
-                "javax.servlet.ServletContextEvent": ""
-            };
+            var imports = [
+                "com.googlecode.objectify.Objectify",
+                "com.googlecode.objectify.ObjectifyFactory",
+                "com.googlecode.objectify.ObjectifyService",
+                "javax.servlet.ServletContextListener",
+                "javax.servlet.ServletContextEvent"
+            ];
 
-            return this.generatePackageHeader()
-              .concat(Object.keys(
-                  imports).concat(
-                      this.generatedTypes).map((type) => "import " + type + ";"))
-              .concat(["", ""])
+            return this.generatePackageHeader(imports.concat(
+                mapValues(this.typesToSerialize,
+                    (typeName, type) => type.fullName)))
               .concat([
                   "public class OfyHelper implements ServletContextListener {",
                   () => [
                       "public static void register() {",
-                      () => this.generatedTypes.map(cl => "ObjectifyService.register(" + cl + ".class);"),
+                      () => mapValues(this.typesToSerialize,
+                          (typeName, type) => "ObjectifyService.register(" + type.fullName + ".class);"),
                       "}"
                   ],
                   "",
@@ -214,16 +240,16 @@ class JavaClassesGenerator {
         stream.close();
     };
 
-    mapTypes(out:OutFolder): void {
+    public mapTypes(out:OutFolder): void {
         this.api.types().forEach((type) => {
             const block:Block = () => {
-                var imports:{ [typeName: string]:any } = {
-                    "com.googlecode.objectify.annotation.Entity": "",
-                    "com.googlecode.objectify.annotation.Id": "",
-                    "com.googlecode.objectify.annotation.Index": "",
-                    "com.googlecode.objectify.annotation.Parent": "",
-                    "com.googlecode.objectify.Key": ""
-                };
+                var imports = [
+                    "com.googlecode.objectify.annotation.Entity",
+                    "com.googlecode.objectify.annotation.Id",
+                    "com.googlecode.objectify.annotation.Index",
+                    "com.googlecode.objectify.annotation.Parent",
+                    "com.googlecode.objectify.Key"
+                ];
 
                 const toJavaType = function (type:string) {
                     return toJavaTypeImpl(type, (type) => {
@@ -231,20 +257,22 @@ class JavaClassesGenerator {
                     });
                 };
 
-                // Add this type to list of all generated ones
-                this.generatedTypes.push(this.packageAsArray.concat([type.name()]).join("."));
-
                 const props = type.properties();
 
                 var wholeClassContent = [];
 
                 wholeClassContent.push("// Properties:");
 
+                var idFieldName: string;
+                var idFieldType: string;
+
                 props.forEach((prop) => {
                     prop.annotations().forEach(a => {
                         const ann = getAnnotation(a);
                         if (ann.name === "orm.id") {
                             wholeClassContent.push("@Id");
+                            idFieldName = prop.name();
+                            idFieldType = prop.type()[0];
                         }
                     });
 
@@ -286,8 +314,16 @@ class JavaClassesGenerator {
                     "}"
                 ];
 
-                return this.generatePackageHeader()
-                    .concat(Object.keys(imports).map((type) => "import " + type + ";"))
+                // Add this type to list of all generated ones
+                const typeObject: TypeToSerialize = {
+                    shortName: type.name(),
+                    fullName: this.packageAsArray.concat([type.name()]).join("."),
+                    idFieldName: idFieldName,
+                    idFieldType: idFieldType,
+                };
+                this.typesToSerialize[typeObject.shortName] = typeObject;
+
+                return this.generatePackageHeader(imports)
                     .concat([""])
                     .concat(classDeclaration);
             };
@@ -382,8 +418,7 @@ class JavaClassesGenerator {
                 ];
 
                 // Generate servlet's code here
-                const block = this.generatePackageHeader()
-                    .concat(imports.map(type => "import " + type + ";"))
+                const block = this.generatePackageHeader(imports)
                     .concat([
                         "",
                         "public class " + javaClassName + " extends HttpServlet {",
@@ -414,15 +449,42 @@ class JavaClassesGenerator {
 
                                         return [
                                             //"// here we should process DELETE",
-                                            "System.out.println(\"Do delete: \" + req.getRequestURI());",
                                             "Pattern pattern = Pattern.compile(\"" +
                                                 patternAndMap[0]+ "\");",
                                             "Matcher m = pattern.matcher(req.getRequestURI());",
                                             "if (m.find()) {",
-                                            () => Object.keys(patternAndMap[1]).map(m =>
-                                                "System.out.println(\"" + m + "\" + m.group(" +
-                                                    patternAndMap[1][m] + "));"
-                                            ),
+                                            () => {
+                                                var className;
+                                                var urlParName;
+                                                Object.keys(urlParams).forEach(urlPar => {
+                                                    Object.keys(urlParams[urlPar]).forEach( annName => {
+                                                        if (annName === "orm.join") {
+                                                            className = urlParams[urlPar][annName];
+                                                            urlParName = urlPar;
+                                                        }
+                                                    });
+                                                });
+
+                                                if (className && urlParName) {
+                                                    const classDesc = this.typesToSerialize[className];
+                                                    const idDecl: string[] = [];
+                                                    const idType = toJavaTypeImpl(classDesc.idFieldType, ()=>{});
+
+                                                    if (idType === "String") {
+                                                        idDecl.push("String id = m.group(" + patternAndMap[1][urlParName] + ");");
+                                                    } else {
+                                                        idDecl.push(idType + " id = " +
+                                                            idType + ".decode(m.group(" + patternAndMap[1][urlParName] + "));");
+                                                    }
+
+                                                    return idDecl.concat([
+                                                        "ObjectifyService.ofy().delete().type(" +
+                                                            classDesc.shortName + ".class).id(id).now();"
+                                                    ]);
+                                                } else {
+                                                    return ["// No id for class to delete"];
+                                                }
+                                            },
                                             "}"
                                             //"Collection<" + className + "> result = ObjectifyService.ofy().load().type(" +
                                             //    className + ".class).ids(req. ).list();",
@@ -477,22 +539,27 @@ class JavaClassesGenerator {
         return [regexp, map];
     }
 
-    private generatePackageHeader(): (Block|string)[] {
+    private generatePackageHeader(imports: string[]): (Block|string)[] {
         return [
             "// This file is generated.",
             "// please don't edit it manually.",
             "",
             "package " + this.packageAsArray.join(".") + ";",
             () => [""],
-            ""
-        ];
+            "" ]
+        .concat(imports.map(i => "import " + i + ";"))
+        .concat([
+            "",
+            ""]);
     };
-/*
-    private getTypeFromName(name:string): any {
-       return this.api.types().filter((t) => t.name() === name)[0];
-    };
-*/
+
+    //private getTypeFromName(name:string): any {
+    //   return this.api.types().filter((t) => t.name() === name)[0];
+    //};
 }
+
+//console.log(mapValues( { a: 1, b: 2, c: 3}, (k, v) => k + " => " + (v + 1)).join(","));
+//return;
 
 //const pat = JavaClassesGenerator.urlParsePattern(["person", "{personName}"]);
 //console.log(pat);
