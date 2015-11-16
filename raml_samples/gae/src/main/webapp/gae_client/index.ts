@@ -48,7 +48,7 @@ function listPersons() {
 
 function deletePerson() {
     var http = new XMLHttpRequest();
-    http.open("GET", "/person/" +
+    http.open("DELETE", "/person/" +
         (<HTMLInputElement>document.getElementById("personIdToDelete")).value, true);
 
     http.onreadystatechange = function() {//Call a function when the state changes.

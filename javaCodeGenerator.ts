@@ -375,6 +375,8 @@ class JavaClassesGenerator {
                     "java.io.InputStreamReader",
                     "java.io.OutputStreamWriter",
                     "java.util.Collection",
+                    "java.util.regex.Pattern",
+                    "java.util.regex.Matcher",
                     "com.googlecode.objectify.ObjectifyService",
                     "com.google.gson.Gson"
                 ];
@@ -407,18 +409,32 @@ class JavaClassesGenerator {
                                         "new Gson().toJson(result, resp.getWriter());",
                                         "resp.flushBuffer();"
                                     ],
-                                    "orm.delete.request": () => [
-                                        //"// here we should process DELETE",
-                                        //"Collection<" + className + "> result = ObjectifyService.ofy().load().type(" +
-                                        //    className + ".class).ids(req. ).list();",
-                                        //"ObjectifyService.ofy().delete(result).now();",
-                                        //
-                                        //"resp.setStatus(200);",
-                                        //"resp.setContentType(\"application/json\");",
-                                        //"",
-                                        //"new Gson().toJson(result, resp.getWriter());",
-                                        //"resp.flushBuffer();"
-                                    ]
+                                    "orm.delete.request": () => {
+                                        const patternAndMap = JavaClassesGenerator.urlParsePattern(fullUrl);
+
+                                        return [
+                                            //"// here we should process DELETE",
+                                            "System.out.println(\"Do delete: \" + req.getRequestURI());",
+                                            "Pattern pattern = Pattern.compile(\"" +
+                                                patternAndMap[0]+ "\");",
+                                            "Matcher m = pattern.matcher(req.getRequestURI());",
+                                            "if (m.find()) {",
+                                            () => Object.keys(patternAndMap[1]).map(m =>
+                                                "System.out.println(\"" + m + "\" + m.group(" +
+                                                    patternAndMap[1][m] + "));"
+                                            ),
+                                            "}"
+                                            //"Collection<" + className + "> result = ObjectifyService.ofy().load().type(" +
+                                            //    className + ".class).ids(req. ).list();",
+                                            //"ObjectifyService.ofy().delete(result).now();",
+                                            //
+                                            //"resp.setStatus(200);",
+                                            //"resp.setContentType(\"application/json\");",
+                                            //"",
+                                            //"new Gson().toJson(result, resp.getWriter());",
+                                            //"resp.flushBuffer();"
+                                        ]
+                                    }
                                 }[method]) || (() => [])) ();
 
                                 return [
@@ -450,6 +466,17 @@ class JavaClassesGenerator {
         this.generateOfyHelper(out.createOutStream(this.packageAsArray.concat(["OfyHelper.java"])));
     };
 
+    public static urlParsePattern(url: string[]): [string, {[parName: string]: number}] {
+        const map:{[parName: string]: number} = {};
+        var index = 1;
+        const regexp = "^/" + url.map(val => val.replace(/{([^}]*)}/gi,
+            (s, inner) => {
+                map[inner] = index++;
+                return "(.*" + ")";
+            })).join("/");
+        return [regexp, map];
+    }
+
     private generatePackageHeader(): (Block|string)[] {
         return [
             "// This file is generated.",
@@ -466,6 +493,10 @@ class JavaClassesGenerator {
     };
 */
 }
+
+//const pat = JavaClassesGenerator.urlParsePattern(["person", "{personName}"]);
+//console.log(pat);
+//return;
 
 // Source file
 var fName = path.resolve(__dirname + "/raml_samples/database.raml");
