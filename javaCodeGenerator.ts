@@ -6,6 +6,7 @@ import raml = require("raml-1-0-parser");
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
+import TypeToSerialize from "./";
 
 
 interface TextStream {
@@ -444,59 +445,33 @@ class JavaClassesGenerator {
                                         "new Gson().toJson(result, resp.getWriter());",
                                         "resp.flushBuffer();"
                                     ],
-                                    "orm.delete.request": () => {
-                                        const patternAndMap = JavaClassesGenerator.urlParsePattern(fullUrl);
-
-                                        return [
-                                            //"// here we should process DELETE",
-                                            "Pattern pattern = Pattern.compile(\"" +
-                                                patternAndMap[0]+ "\");",
-                                            "Matcher m = pattern.matcher(req.getRequestURI());",
-                                            "if (m.find()) {",
-                                            () => {
-                                                var className;
-                                                var urlParName;
-                                                Object.keys(urlParams).forEach(urlPar => {
-                                                    Object.keys(urlParams[urlPar]).forEach( annName => {
-                                                        if (annName === "orm.join") {
-                                                            className = urlParams[urlPar][annName];
-                                                            urlParName = urlPar;
-                                                        }
-                                                    });
-                                                });
-
-                                                if (className && urlParName) {
-                                                    const classDesc = this.typesToSerialize[className];
-                                                    const idDecl: string[] = [];
-                                                    const idType = toJavaTypeImpl(classDesc.idFieldType, ()=>{});
-
-                                                    if (idType === "String") {
-                                                        idDecl.push("String id = m.group(" + patternAndMap[1][urlParName] + ");");
-                                                    } else {
-                                                        idDecl.push(idType + " id = " +
-                                                            idType + ".decode(m.group(" + patternAndMap[1][urlParName] + "));");
-                                                    }
-
-                                                    return idDecl.concat([
-                                                        "ObjectifyService.ofy().delete().type(" +
-                                                            classDesc.shortName + ".class).id(id).now();"
-                                                    ]);
-                                                } else {
-                                                    return ["// No id for class to delete"];
-                                                }
-                                            },
-                                            "}"
-                                            //"Collection<" + className + "> result = ObjectifyService.ofy().load().type(" +
-                                            //    className + ".class).ids(req. ).list();",
-                                            //"ObjectifyService.ofy().delete(result).now();",
-                                            //
-                                            //"resp.setStatus(200);",
-                                            //"resp.setContentType(\"application/json\");",
-                                            //"",
-                                            //"new Gson().toJson(result, resp.getWriter());",
-                                            //"resp.flushBuffer();"
-                                        ]
-                                    }
+                                    "orm.delete.request": () =>
+                                        this.processElementById(fullUrl, urlParams, (classDesc) => [
+                                            classDesc.shortName + " result = " +
+                                            "ObjectifyService.ofy().load().type(" +
+                                            classDesc.shortName + ".class).id(id).now();",
+                                            "resp.setStatus(200);",
+                                            "resp.setContentType(\"application/json\");",
+                                            "",
+                                            "// Delete the value",
+                                            "ObjectifyService.ofy().delete().type(" +
+                                                classDesc.shortName + ".class).id(id).now();",
+                                            "",
+                                            "// Return deleted one",
+                                            "new Gson().toJson(result, resp.getWriter());",
+                                            "resp.flushBuffer();"
+                                        ]),
+                                    "orm.get.request": () =>
+                                        this.processElementById(fullUrl, urlParams, (classDesc) => [
+                                            classDesc.shortName + " result = " +
+                                                "ObjectifyService.ofy().load().type(" +
+                                                classDesc.shortName + ".class).id(id).now();",
+                                            "resp.setStatus(200);",
+                                            "resp.setContentType(\"application/json\");",
+                                            "",
+                                            "new Gson().toJson(result, resp.getWriter());",
+                                            "resp.flushBuffer();"
+                                        ]),
                                 }[method]) || (() => [])) ();
 
                                 return [
@@ -528,14 +503,57 @@ class JavaClassesGenerator {
         this.generateOfyHelper(out.createOutStream(this.packageAsArray.concat(["OfyHelper.java"])));
     };
 
+    private processElementById(fullUrl, urlParams, processId: (className: TypeToSerialize) => string[]) {
+        const patternAndMap = JavaClassesGenerator.urlParsePattern(fullUrl);
+
+        return [
+            //"// here we should process DELETE",
+            "Pattern pattern = Pattern.compile(\"" +
+            patternAndMap[0] + "\");",
+            "Matcher m = pattern.matcher(req.getRequestURI());",
+            "if (m.find()) {",
+            () => {
+                var className;
+                var urlParName;
+                Object.keys(urlParams).forEach(urlPar => {
+                    Object.keys(urlParams[urlPar]).forEach(annName => {
+                        if (annName === "orm.join") {
+                            className = urlParams[urlPar][annName];
+                            urlParName = urlPar;
+                        }
+                    });
+                });
+
+                if (className && urlParName) {
+                    const classDesc = this.typesToSerialize[className];
+                    const idDecl:string[] = [];
+                    const idType = toJavaTypeImpl(classDesc.idFieldType, ()=> {
+                    });
+
+                    if (idType === "String") {
+                        idDecl.push("String id = m.group(" + patternAndMap[1][urlParName] + ");");
+                    } else {
+                        idDecl.push(idType + " id = " +
+                            idType + ".decode(m.group(" + patternAndMap[1][urlParName] + "));");
+                    }
+
+                    return idDecl.concat(processId(classDesc));
+                } else {
+                    return ["// No id for class to process"];
+                }
+            },
+            "}"
+        ]
+    };
+
     public static urlParsePattern(url: string[]): [string, {[parName: string]: number}] {
         const map:{[parName: string]: number} = {};
         var index = 1;
         const regexp = "^/" + url.map(val => val.replace(/{([^}]*)}/gi,
-            (s, inner) => {
-                map[inner] = index++;
-                return "(.*" + ")";
-            })).join("/");
+                (s, inner) => {
+                    map[inner] = index++;
+                    return "(.*" + ")";
+                })).join("/");
         return [regexp, map];
     }
 
@@ -547,10 +565,10 @@ class JavaClassesGenerator {
             "package " + this.packageAsArray.join(".") + ";",
             () => [""],
             "" ]
-        .concat(imports.map(i => "import " + i + ";"))
-        .concat([
-            "",
-            ""]);
+            .concat(imports.map(i => "import " + i + ";"))
+            .concat([
+                "",
+                ""]);
     };
 
     //private getTypeFromName(name:string): any {

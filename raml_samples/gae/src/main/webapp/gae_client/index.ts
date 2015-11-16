@@ -1,6 +1,10 @@
-/**
- * Created by Vadim on 11/13/2015.
- */
+var reportProgress = function (innerHTML) {
+    document.getElementById("person_created").innerHTML = innerHTML;
+};
+
+var getIdFromInputFld = function () {
+    return (<HTMLInputElement>document.getElementById("personIdToDelete")).value;
+};
 
 function createPerson() {
     var firstNames = ["Manie", "Joya", "Carroll", "Vivien", "Daphne", "Shala", "Shaunta", "Hershel", "Lillian", "Lonnie", "Chester", "Grayce", "Ching", "Chante", "Mayra", "Pasty", "Shayna", "Willow", "Mable", "Chastity", "Genaro", "Marcela", "Rasheeda", "Mittie", "Clifford", "Jolie"];
@@ -17,11 +21,11 @@ function createPerson() {
 
     http.onreadystatechange = function() {//Call a function when the state changes.
         if(http.readyState == 4 && http.status == 200) {
-            document.getElementById("person_created").innerHTML = "Added " + firstName + " " + secondName;
+            reportProgress("Added " + firstName + " " + secondName);
         }
     }
 
-    document.getElementById("person_created").innerHTML = "Adding " + firstName + " " + secondName;
+    reportProgress("Adding " + firstName + " " + secondName);
 
     http.send(JSON.stringify({
         "firstName": firstName,
@@ -32,7 +36,7 @@ function createPerson() {
 }
 
 function listPersons() {
-    document.getElementById("persons").innerHTML = "Loading ...";
+    reportProgress("Loading persons list...");
 
     var http = new XMLHttpRequest();
     http.open("GET", "/person", true);
@@ -47,15 +51,39 @@ function listPersons() {
 }
 
 function deletePerson() {
+    reportProgress("Deleting person with id " + getIdFromInputFld() + " ...");
+
     var http = new XMLHttpRequest();
-    http.open("DELETE", "/person/" +
+    http.open("DELETE", "/person/" + getIdFromInputFld(), true);
+
+    http.onreadystatechange = function() {//Call a function when the state changes.
+        if(http.readyState == 4 && http.status == 200) {
+            // re-read
+            var person = JSON.parse(http.responseText);
+            reportProgress("Deleted " + person.firstName + " " + person.lastName);
+        }
+    };
+
+    http.send();
+}
+
+function getPerson() {
+    reportProgress("Reading person with id " + getIdFromInputFld() + " ...");
+
+    var http = new XMLHttpRequest();
+    http.open("GET", "/person/" +
         (<HTMLInputElement>document.getElementById("personIdToDelete")).value, true);
 
     http.onreadystatechange = function() {//Call a function when the state changes.
         if(http.readyState == 4 && http.status == 200) {
-            alert(http.responseText);
+            // re-read
+            var person = JSON.parse(http.responseText);
+            reportProgress("Read " + person.firstName + " " + person.lastName +
+                (person.yearOfBirth ? (", (s)he is " + ((new Date()).getFullYear() - person.yearOfBirth) + " years old") : ""));
         }
     }
 
     http.send();
 }
+
+
