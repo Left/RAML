@@ -7,6 +7,7 @@ import fs = require("fs");
 import os = require("os");
 import path = require("path");
 import TypeToSerialize from "./";
+import Property = esprima.Syntax.Property;
 
 
 interface TextStream {
@@ -246,6 +247,7 @@ class JavaClassesGenerator {
             const block:Block = () => {
                 var imports = [
                     "com.googlecode.objectify.annotation.Entity",
+                    "com.googlecode.objectify.annotation.Subclass",
                     "com.googlecode.objectify.annotation.Id",
                     "com.googlecode.objectify.annotation.Index",
                     "com.googlecode.objectify.annotation.Parent",
@@ -267,50 +269,79 @@ class JavaClassesGenerator {
                 var idFieldName: string;
                 var idFieldType: string;
 
+                interface Prop {
+                    name: string;
+                    type: string;
+                };
+
+                const properties: Prop[] = [];
+
                 props.forEach((prop) => {
+                    const anns: { [id: string]: string} = {};
                     prop.annotations().forEach(a => {
                         const ann = getAnnotation(a);
-                        if (ann.name === "orm.id") {
-                            wholeClassContent.push("@Id");
-                            idFieldName = prop.name();
-                            idFieldType = prop.type()[0];
-                        }
+                        anns[ann.name] = ann.value;
                     });
 
+                    if ("orm.id" in anns) {
+                        wholeClassContent.push("@Id");
+                        idFieldName = prop.name();
+                        idFieldType = prop.type()[0];
+                    }
+
+                    var pr: Prop;
+                    if (anns["orm.join"]) {
+                        pr = {
+                            name: prop.name(),
+                            type: toJavaType(prop.type()[0]) // "Key<" + anns["orm.join"] + ">"
+                        };
+                    } else {
+                        pr = {
+                            name: prop.name(),
+                            type: toJavaType(prop.type()[0])
+                        };
+                    }
+
+                    properties.push(pr);
                     wholeClassContent = wholeClassContent.concat([
-                        "private " + toJavaType(prop.type()[0]) + " " + prop.name() + ";"
+                        "private  " + pr.type + " " + pr.name + ";"
                     ]);
                 });
 
                 // Getters
-                wholeClassContent.push("");
-                wholeClassContent.push("// Getters:");
+                wholeClassContent = wholeClassContent.concat(["",
+                    "// Getters:",
+                    ""]);
 
-                props.forEach((prop) => {
+                properties.forEach((prop) => {
                     wholeClassContent = wholeClassContent.concat([
-                        "public " + toJavaType(prop.type()[0]) + " get" + uppercaseFirst(prop.name()) + "() { ",
-                        () => ["return " + prop.name() + ";"],
+                        "public " + prop.type + " get" + uppercaseFirst(prop.name) + "() { ",
+                        () => ["return " + prop.name + ";"],
                         "};"]);
                 });
 
                 // Setters
-                wholeClassContent.push("");
-                wholeClassContent.push("// Setters:");
+                wholeClassContent = wholeClassContent.concat(["",
+                    "// Setters:",
+                    ""]);
 
-                props.forEach((prop) => {
+                properties.forEach((prop) => {
                     wholeClassContent = wholeClassContent.concat([
-                        "public void set" + uppercaseFirst(prop.name()) + "(" + toJavaType(prop.type()[0]) + " " + prop.name() + ") { ",
-                        () => ["this." + prop.name() + "=" + prop.name() + ";"],
+                        "public void set" + uppercaseFirst(prop.name) + "(" + prop.type + " " + prop.name + ") { ",
+                        () => ["this." + prop.name + " = " + prop.name + ";"],
                         "};"
                     ]);
                 });
+
+                const extendsClass = type.type()[0] === "object" ? "" : type.type()[0];
 
                 const classDeclaration = [
                     "/**",
                     " * " + (type.displayName() || ""),
                     " */",
-                    "@Entity",
-                    "public class " + type.name() + "{",
+                    (extendsClass ? "@Subclass" : "@Entity"),
+                    "public class " + type.name() +
+                        (extendsClass ? (" extends " + extendsClass + " ") : "") + "{",
                     () => wholeClassContent,
                     "}"
                 ];
@@ -337,7 +368,7 @@ class JavaClassesGenerator {
         joinResouces(this.api.resources(), [], (fullUrl, r) => {
             const urlParams:{[paramName: string]: {[attrName: string]: string}} = {};
 
-            r.uriParameters().forEach(p => {
+            r.allUriParameters().forEach(p => {
                 urlParams[p.name()] = {};
                 p.annotations().forEach(a => {
                     const ann = getAnnotation(a);
@@ -434,7 +465,13 @@ class JavaClassesGenerator {
                                         "InputStream strm = req.getInputStream();",
                                         className + " obj = new Gson().fromJson(new InputStreamReader(strm), " + className + ".class);",
                                         "",
-                                        "ObjectifyService.ofy().save().entity(obj).now();"
+                                        "ObjectifyService.ofy().save().entity(obj).now();",
+                                        "",
+                                        "resp.setStatus(200);",
+                                        "resp.setContentType(\"application/json\");",
+                                        "",
+                                        "new Gson().toJson(obj, resp.getWriter());",
+                                        "resp.flushBuffer();"
                                     ],
                                     "orm.list.request": () => [
                                         "// here we should process GET",
@@ -558,16 +595,33 @@ class JavaClassesGenerator {
     }
 
     private generatePackageHeader(imports: string[]): (Block|string)[] {
+        const importLines = imports
+            .concat()
+            .sort((a, b) => -(a.split(".")[0].localeCompare(b.split(".")[0])) ||
+                a.localeCompare(b))
+            .reduce((list, b) => {
+                function removeLastSegment(u) {
+                    const sp = u.split('.');
+                    return sp.slice(0, 2).join('.');
+                }
+                if (list.length > 0 &&
+                    removeLastSegment(list[list.length-1]) !== removeLastSegment(b)) {
+                    list.push("");
+                }
+
+                list.push(b);
+                return list;
+            }, [])
+            .map(i => i ? "import " + i + ";" : "");
+
         return [
             "// This file is generated.",
             "// please don't edit it manually.",
             "",
             "package " + this.packageAsArray.join(".") + ";",
-            () => [""],
             "" ]
-            .concat(imports.map(i => "import " + i + ";"))
+            .concat(importLines)
             .concat([
-                "",
                 ""]);
     };
 

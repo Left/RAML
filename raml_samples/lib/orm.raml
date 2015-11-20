@@ -31,22 +31,31 @@ annotationTypes:
         required: false
 
   create.request:
-    description: marks request as a one that should create a new object
+    description: marks request as the one that should create a new object
     parameters:
       value:
         type: string
         required: true
   list.request:
+    description: marks request as the one that should list all objects
     parameters:
       value:
         type: string
         required: true
   get.request:
+    description: marks request as the one that should get an object by ID
     parameters:
       value:
         type: string
         required: true
   delete.request:
+    description: marks request as the one that should delete an object
+    parameters:
+      value:
+        type: string
+        required: true
+  update.request:
+    description: marks request as the one that should update object
     parameters:
       value:
         type: string

@@ -13,12 +13,20 @@
         <listener-class>com.example.dbotest.db.OfyHelper</listener-class>
     </listener>
     <servlet>
+        <servlet-name>Servlet3</servlet-name>
+        <servlet-class>com.example.dbotest.db.Servlet3</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Servlet3</servlet-name>
+        <url-pattern>/person/*</url-pattern>
+    </servlet-mapping>
+    <servlet>
         <servlet-name>Servlet2</servlet-name>
         <servlet-class>com.example.dbotest.db.Servlet2</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>Servlet2</servlet-name>
-        <url-pattern>/person/*</url-pattern>
+        <url-pattern>/person</url-pattern>
     </servlet-mapping>
     <servlet>
         <servlet-name>Servlet1</servlet-name>
@@ -26,7 +34,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>Servlet1</servlet-name>
-        <url-pattern>/person</url-pattern>
+        <url-pattern>/child</url-pattern>
     </servlet-mapping>
 <!-- [END Objectify] -->
 </web-app>

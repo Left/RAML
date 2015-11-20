@@ -40,6 +40,16 @@ types:
         required: false
       yearOfBirth: number
 
+  Child:
+    type: Person
+    properties:
+      father:
+        type: number
+        (orm.join): Person
+      mother:
+        type: number
+        (orm.join): Person
+
   Pet:
     type: object
     displayName: Pet that can live at some address and have an owner
@@ -49,12 +59,26 @@ types:
         (orm.id):
       owner:
         type: number
-        (orm.join): person
+        (orm.join): Person
       name:
         type: string
       addressId:
         type: number
         (orm.join): Address
+
+/child:
+  post:
+    (orm.create.request): Child
+    body:
+      application/json:
+        type: Child
+    description: |
+      Creates new person
+    responses:
+      200:
+        body:
+          application/json:
+            type: Child
 
 /person:
   post:
@@ -97,6 +121,16 @@ types:
       (orm.delete.request): Person
       description: |
         Delete the person
+      responses:
+        200:
+          body:
+    put:
+      (orm.update.request): Person
+      body:
+        application/json:
+          type: Person
+      description: |
+        Update the person
       responses:
         200:
           body:
